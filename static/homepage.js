@@ -5,6 +5,6 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     startButton.addEventListener('click', function () {
-        window.location.href = '/learn/1';
+        window.location.href = '/learn';
     });
 });
