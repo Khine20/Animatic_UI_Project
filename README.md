@@ -52,6 +52,12 @@ Quiz questions live in `data.json` (source of truth, not hard-coded in HTML). Pe
 
 This is a single-user app (per HW spec), so one file is sufficient.
 
+## Contributors
+
+- Khine20
+- jettlwang
+- OleNY1
+
 ## Canvas Data (for backend)
 
 Each animation is just a list of PNG data URLs (one per frame).
