@@ -5,6 +5,10 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     startButton.addEventListener('click', function () {
-        window.location.href = '/learn';
+        fetch('/start', { method: 'POST' })
+            .catch(function () { /* ignore — still advance */ })
+            .finally(function () {
+                window.location.href = '/learn';
+            });
     });
 });

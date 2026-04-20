@@ -26,9 +26,31 @@ window.AnimaticCanvasModule.mount('#animator-root-main');
 ```
 
 Routes:
-- `/` homepage
-- `/learn` demo
-- `/learn/<lesson_id>`
+- `GET /` — homepage with Start button
+- `POST /start` — called by the Start button; resets stored user data for a new session
+- `GET /learn` — learning page (animator canvas)
+- `GET /learn/<lesson_id>` — learning page for a specific lesson number
+- `GET /quiz/<question_id>` — renders quiz question `question_id` (1-indexed)
+- `POST /quiz/<question_id>/answer` — JSON endpoint: `{ "selected_index": <int> }`; stores the user's answer and returns `{ "ok": true, "next_url": "..." }`
+- `GET /quiz/result` — final score + answer breakdown
+- `POST /reset` — clears all stored user data (used by "Retake Quiz")
+
+## User data storage
+
+Quiz questions live in `data.json` (source of truth, not hard-coded in HTML). Per-session user choices are written to `user_data.json`:
+
+```json
+{
+  "started_at": "2026-04-20T17:30:00Z",
+  "visits": [ { "page": "home", "at": "..." }, { "page": "learn", "at": "..." } ],
+  "answers": {
+    "1": { "selected_index": 1, "answered_at": "..." },
+    "2": { "selected_index": 0, "answered_at": "..." }
+  }
+}
+```
+
+This is a single-user app (per HW spec), so one file is sufficient.
 
 ## Canvas Data (for backend)
 

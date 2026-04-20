@@ -1,0 +1,59 @@
+{
+  "quiz": [
+    {
+      "id": 1,
+      "question": "What is a 'frame' in animation?",
+      "options": [
+        "A decorative border around the canvas",
+        "A single still image in a sequence that creates motion when played back",
+        "The outline of a character",
+        "A type of drawing tool"
+      ],
+      "correct_index": 1
+    },
+    {
+      "id": 2,
+      "question": "What does 'FPS' stand for?",
+      "options": [
+        "Frames Per Second",
+        "Final Picture Sequence",
+        "Free Pixel Style",
+        "Frame Placement System"
+      ],
+      "correct_index": 0
+    },
+    {
+      "id": 3,
+      "question": "What is 'onion skinning' used for?",
+      "options": [
+        "Changing the canvas background color",
+        "Exporting an animation as an image",
+        "Seeing faint copies of nearby frames so you can align your drawing",
+        "Smoothing out the lines you draw"
+      ],
+      "correct_index": 2
+    },
+    {
+      "id": 4,
+      "question": "For a short bouncing-ball animation, roughly how many frames do you need at minimum to see clear motion?",
+      "options": [
+        "1 frame",
+        "2 frames",
+        "At least 5 frames",
+        "Exactly 100 frames"
+      ],
+      "correct_index": 2
+    },
+    {
+      "id": 5,
+      "question": "Which principle describes an object stretching as it moves quickly and squashing when it lands?",
+      "options": [
+        "Onion skinning",
+        "Squash and stretch",
+        "Tweening",
+        "Rotoscoping"
+      ],
+      "correct_index": 1
+    }
+  ]
+}
