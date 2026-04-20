@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Mini Animator - MS Paint Edition</title>
+    <!-- Replaced Tailwind with Bootstrap 5 -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #008080; /* Classic Windows Teal Desktop */
+            font-family: 'Tahoma', 'MS Sans Serif', sans-serif;
+            overscroll-behavior: none;
+            touch-action: none;
+            color: #000;
+        }
+        
+        /* Win95 UI Elements */
+        .win-window {
+            background-color: #c0c0c0;
+            border-top: 2px solid #dfdfdf;
+            border-left: 2px solid #dfdfdf;
+            border-right: 2px solid #000;
+            border-bottom: 2px solid #000;
+            box-shadow: inset 1px 1px 0 #fff, inset -1px -1px 0 #808080;
+        }
+        .win-inset {
+            border-top: 2px solid #808080;
+            border-left: 2px solid #808080;
+            border-right: 2px solid #fff;
+            border-bottom: 2px solid #fff;
+            box-shadow: inset 1px 1px 0 #000, inset -1px -1px 0 #dfdfdf;
+            background: #fff;
+        }
+        .win-btn {
+            background-color: #c0c0c0;
+            border-top: 2px solid #dfdfdf;
+            border-left: 2px solid #dfdfdf;
+            border-right: 2px solid #000;
+            border-bottom: 2px solid #000;
+            box-shadow: inset 1px 1px 0 #fff, inset -1px -1px 0 #808080;
+            cursor: pointer;
+            text-align: center;
+            font-size: 12px;
+            color: #000;
+            user-select: none;
+        }
+        .win-btn:active, .win-btn.active {
+            border-top: 2px solid #000;
+            border-left: 2px solid #000;
+            border-right: 2px solid #dfdfdf;
+            border-bottom: 2px solid #dfdfdf;
+            box-shadow: inset 1px 1px 0 #808080, inset -1px -1px 0 #fff;
+        }
+        
+        /* Canvas Specifics */
+        .canvas-container {
+            aspect-ratio: 4 / 3;
+            width: 100%;
+        }
+        canvas {
+            touch-action: none;
+            cursor: crosshair;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+        #canvas-onion {
+            pointer-events: none;
+        }
+        
+        #timeline::-webkit-scrollbar { height: 12px; background: #dfdfdf; border: 1px solid #808080; }
+        #timeline::-webkit-scrollbar-thumb { background: #c0c0c0; border: 1px outset #fff; }
+        
+        /* Utility classes replacement */
+        .title-bar { background-color: #000080; font-size: 0.875rem; padding: 2px 4px; }
+        .text-xs { font-size: 0.75rem; }
+        .gap-2px { gap: 2px; }
+        .w-14 { width: 3.5rem; }
+        .text-10px { font-size: 10px; }
+    </style>
+</head>
+<body class="d-flex flex-column align-items-center min-vh-100 p-2 p-sm-4">
+
+    <!-- Main Application Window -->
+    <div class="win-window d-flex flex-column w-100 p-1" style="max-width: 56rem;">
+        
+        <!-- Title Bar -->
+        <div class="title-bar text-white fw-bold mb-1 d-flex justify-content-between align-items-center user-select-none">
+            <span class="d-flex align-items-center gap-2">
+                <span class="bg-white px-1 text-xs" style="color: #000080;">🎨</span> Mini Animator - untitled.ani
+            </span>
+            <div class="d-flex gap-2px">
+                <button class="win-btn px-2 py-0 fw-bold d-none d-sm-block">_</button>
+                <button class="win-btn px-2 py-0 fw-bold d-none d-sm-block">□</button>
+                <button class="win-btn px-2 py-0 fw-bold">X</button>
+            </div>
+        </div>
+
+        <!-- Menu Bar -->
+        <div class="px-2 mb-2 d-flex gap-4 user-select-none" style="font-size: 0.875rem;">
+            <span class="text-decoration-underline text-dark" style="cursor:pointer">F</span>ile
+            <span class="text-decoration-underline text-dark" style="cursor:pointer">E</span>dit
+            <span class="text-decoration-underline text-dark" style="cursor:pointer">V</span>iew
+            <span class="text-decoration-underline text-dark" style="cursor:pointer">H</span>elp
+        </div>
+
+        <!-- Workspace (Tools + Canvas) -->
+        <div class="d-flex flex-row gap-2 px-1 mb-2">
+            
+            <!-- Tool Palette (Left) -->
+            <div class="d-flex flex-column gap-1 w-14 flex-shrink-0">
+                <button id="btn-pen" onclick="setTool('pen')" class="win-btn active p-2" title="Pencil">
+                    ✏️
+                </button>
+                <button id="btn-eraser" onclick="setTool('eraser')" class="win-btn p-2" title="Eraser">
+                    🧹
+                </button>
+                <div class="my-1" style="height: 0.25rem; border-bottom: 1px solid #808080; border-top: 1px solid #fff;"></div>
+                <button onclick="clearCanvas()" class="win-btn p-2 text-10px fw-bold" title="Clear Canvas">
+                    CLR
+                </button>
+                <button id="btn-onion" onclick="toggleOnion()" class="win-btn p-2 text-10px fw-bold" title="Toggle Onion Skin">
+                    ONN
+                </button>
+            </div>
+
+            <!-- Drawing Area -->
+            <div class="win-inset canvas-container position-relative overflow-hidden bg-white w-100">
+                <canvas id="canvas-onion"></canvas>
+                <canvas id="canvas-main"></canvas>
+            </div>
+        </div>
+
+        <!-- Timeline / Playback Controls (Bottom) -->
+        <div class="d-flex flex-column flex-sm-row gap-2 px-1 py-2" style="background: #c0c0c0; border-top: 2px solid #fff; box-shadow: 0 -1px 0 #808080;">
+            
+            <!-- Controls -->
+            <div class="d-flex flex-sm-column gap-2 flex-shrink-0">
+                <button onclick="addFrame()" class="win-btn px-3 py-1 fw-bold">
+                    + Add Frame
+                </button>
+                <button id="btn-play" onclick="togglePlay()" class="win-btn px-3 py-1 fw-bold">
+                    <span id="play-icon">▶</span> <span id="play-text">Play (12fps)</span>
+                </button>
+            </div>
+
+            <!-- Frames Area -->
+            <div class="win-inset w-100 p-1 d-flex flex-column justify-content-center overflow-hidden" style="background: #c0c0c0; min-width: 0;">
+                <input type="range" id="frame-slider" min="1" max="1" value="1" class="w-100 mb-2" style="cursor: pointer;" oninput="scrubFrame(this.value)">
+                <div id="timeline" class="d-flex gap-1 overflow-x-auto align-items-center p-1 w-100"></div>
+            </div>
+
+        </div>
+
+        <!-- Status Bar -->
+        <div class="win-inset d-flex align-items-center px-2 mt-1 gap-4" style="background: #c0c0c0; height: 1.5rem; font-size: 0.75rem;">
+            <span>Ready</span>
+            <span id="status-coords" class="ps-4" style="border-left: 1px solid #808080;">0, 0</span>
+        </div>
+    </div>
+
+    <script>
+        const mainCanvas = document.getElementById('canvas-main');
+        const onionCanvas = document.getElementById('canvas-onion');
+        const ctx = mainCanvas.getContext('2d', { willReadFrequently: true });
+        const onionCtx = onionCanvas.getContext('2d');
+        const timeline = document.getElementById('timeline');
+        const frameSlider = document.getElementById('frame-slider');
+        const statusCoords = document.getElementById('status-coords');
+        
+        let frames = []; 
+        let currentFrame = 0;
+        let isDrawing = false;
+        let tool = 'pen';
+        let onionSkin = false;
+        let playing = false;
+        let playInterval;
+
+        function initCanvases() {
+            [mainCanvas, onionCanvas].forEach(c => {
+                c.width = 800;
+                c.height = 600;
+            });
+            ctx.clearRect(0, 0, 800, 600);
+        }
+
+        window.addEventListener('load', () => {
+            initCanvases();
+            frames.push(mainCanvas.toDataURL());
+            updateTimeline();
+        });
+
+        function getCoords(e) {
+            const rect = mainCanvas.getBoundingClientRect();
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            const scaleX = mainCanvas.width / rect.width;
+            const scaleY = mainCanvas.height / rect.height;
+            return { x: (clientX - rect.left) * scaleX, y: (clientY - rect.top) * scaleY };
+        }
+
+        function startDrawing(e) {
+            if (playing) return;
+            isDrawing = true;
+            const pos = getCoords(e);
+            
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+            
+            if (tool === 'eraser') {
+                ctx.globalCompositeOperation = 'destination-out';
+                ctx.lineWidth = 40;
+            } else {
+                ctx.globalCompositeOperation = 'source-over';
+                ctx.strokeStyle = '#000000';
+                ctx.lineWidth = 5;
+            }
+
+            ctx.beginPath();
+            ctx.moveTo(pos.x, pos.y);
+            if (e.cancelable) e.preventDefault();
+        }
+
+        function moveDrawing(e) {
+            const pos = getCoords(e);
+            statusCoords.innerText = `${Math.round(pos.x)}, ${Math.round(pos.y)}`;
+            
+            if (!isDrawing) return;
+            ctx.lineTo(pos.x, pos.y);
+            ctx.stroke();
+            if (e.cancelable) e.preventDefault();
+        }
+
+        function stopDrawing() {
+            if (!isDrawing) return;
+            isDrawing = false;
+            saveFrame();
+        }
+
+        mainCanvas.addEventListener('mousedown', startDrawing);
+        mainCanvas.addEventListener('mousemove', moveDrawing);
+        window.addEventListener('mouseup', stopDrawing);
+        mainCanvas.addEventListener('touchstart', startDrawing, { passive: false });
+        mainCanvas.addEventListener('touchmove', moveDrawing, { passive: false });
+        window.addEventListener('touchend', stopDrawing);
+
+        function setTool(t) {
+            tool = t;
+            document.getElementById('btn-pen').className = t === 'pen' ? 'win-btn active p-2' : 'win-btn p-2';
+            document.getElementById('btn-eraser').className = t === 'eraser' ? 'win-btn active p-2' : 'win-btn p-2';
+        }
+
+        function clearCanvas() {
+            ctx.clearRect(0, 0, mainCanvas.width, mainCanvas.height);
+            saveFrame();
+        }
+
+        function saveFrame() {
+            frames[currentFrame] = mainCanvas.toDataURL();
+            updateTimeline();
+        }
+
+        function addFrame() {
+            if (frames.length >= 30) return;
+            saveFrame();
+            currentFrame = frames.length;
+            ctx.clearRect(0, 0, mainCanvas.width, mainCanvas.height);
+            frames.push(mainCanvas.toDataURL()); 
+            loadFrame(currentFrame);
+            scrollToActive();
+        }
+
+        function loadFrame(index) {
+            currentFrame = index;
+            ctx.clearRect(0, 0, mainCanvas.width, mainCanvas.height);
+            onionCtx.clearRect(0, 0, onionCanvas.width, onionCanvas.height);
+
+            if (onionSkin && !playing) {
+                const range = 3;
+                for (let i = currentFrame - range; i <= currentFrame + range; i++) {
+                    if (i >= 0 && i < frames.length && i !== currentFrame) {
+                        const distance = Math.abs(i - currentFrame);
+                        const onionImg = new Image();
+                        onionImg.onload = () => {
+                            onionCtx.save();
+                            onionCtx.globalAlpha = 0.4 / (distance * 1.5);
+                            onionCtx.drawImage(onionImg, 0, 0);
+                            onionCtx.restore();
+                        };
+                        onionImg.src = frames[i];
+                    }
+                }
+            }
+
+            const img = new Image();
+            img.onload = () => ctx.drawImage(img, 0, 0);
+            img.src = frames[currentFrame] || "";
+            
+            updateTimeline();
+        }
+
+        function toggleOnion() {
+            onionSkin = !onionSkin;
+            const btn = document.getElementById('btn-onion');
+            btn.className = onionSkin ? 'win-btn active p-2 text-10px fw-bold' : 'win-btn p-2 text-10px fw-bold';
+            loadFrame(currentFrame);
+        }
+
+        function scrubFrame(val) {
+            if (playing) return;
+            loadFrame(parseInt(val) - 1);
+        }
+
+        function updateTimeline() {
+            timeline.innerHTML = '';
+            if (frameSlider) {
+                frameSlider.max = Math.max(1, frames.length);
+                frameSlider.value = currentFrame + 1;
+            }
+            frames.forEach((data, i) => {
+                const btn = document.createElement('button');
+                btn.className = `win-btn flex-shrink-0 d-flex align-items-center justify-content-center bg-white p-0 overflow-hidden ${i === currentFrame ? 'active' : ''}`;
+                btn.style.width = '2.5rem';
+                btn.style.height = '2.5rem';
+                
+                if (data && data.length > 100) {
+                    const thumb = document.createElement('img');
+                    thumb.src = data;
+                    thumb.className = "w-100 h-100 pe-none";
+                    thumb.style.objectFit = 'contain';
+                    btn.appendChild(thumb);
+                } else {
+                    btn.innerText = i + 1;
+                }
+
+                btn.onclick = () => { if(!playing) loadFrame(i); };
+                timeline.appendChild(btn);
+            });
+        }
+
+        function scrollToActive() {
+            const active = timeline.querySelector('.active');
+            if (active) active.scrollIntoView({ behavior: 'smooth', inline: 'center' });
+        }
+
+        function togglePlay() {
+            playing = !playing;
+            const btn = document.getElementById('btn-play');
+            const playText = document.getElementById('play-text');
+            const playIcon = document.getElementById('play-icon');
+
+            if (playing) {
+                frameSlider.disabled = true;
+                onionCtx.clearRect(0, 0, onionCanvas.width, onionCanvas.height); 
+                btn.className = "win-btn active px-3 py-1 fw-bold";
+                playText.innerText = "Stop";
+                playIcon.innerText = "■";
+                
+                let f = 0;
+                playInterval = setInterval(() => {
+                    const img = new Image();
+                    img.onload = () => {
+                        ctx.clearRect(0, 0, mainCanvas.width, mainCanvas.height);
+                        ctx.drawImage(img, 0, 0);
+                    };
+                    img.src = frames[f] || frames[0];
+                    frameSlider.value = f + 1;
+                    f = (f + 1) % frames.length;
+                }, 1000 / 12);
+            } else {
+                clearInterval(playInterval);
+                frameSlider.disabled = false;
+                btn.className = "win-btn px-3 py-1 fw-bold";
+                playText.innerText = "Play (12fps)";
+                playIcon.innerText = "▶";
+                loadFrame(currentFrame);
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,46 @@
+<section id="animator-root-{{ animator_id|default('main') }}" class="animator-module" data-fps="{{ fps|default(12) }}" data-max-frames="{{ max_frames|default(30) }}">
+    <div class="animator-window" data-animator-window>
+        <div class="animator-titlebar" data-drag-handle>
+            <span class="animator-title">Mini Animator - {{ file_name|default('untitled.ani') }}</span>
+            <div class="animator-window-buttons" aria-hidden="true">
+                <span class="animator-window-button"></span>
+                <span class="animator-window-button"></span>
+                <span class="animator-window-button"></span>
+            </div>
+        </div>
+
+        <div class="animator-workspace">
+            <aside class="animator-tools" aria-label="Drawing tools">
+                <button type="button" class="animator-btn is-active" data-action="set-tool" data-tool="pen">PEN</button>
+                <button type="button" class="animator-btn" data-action="set-tool" data-tool="eraser">ERS</button>
+                <button type="button" class="animator-btn" data-action="clear">CLR</button>
+                <button type="button" class="animator-btn" data-action="toggle-onion">ONN</button>
+            </aside>
+
+            <div class="animator-canvas-stage">
+                <canvas class="animator-canvas animator-canvas-onion" data-role="canvas-onion"></canvas>
+                <div class="animator-canvas animator-canvas-main" data-role="canvas-main"></div>
+            </div>
+        </div>
+
+        <div class="animator-timeline-shell">
+            <div class="animator-controls">
+                <button type="button" class="animator-btn" data-action="add-frame">+ Add Frame</button>
+                <button type="button" class="animator-btn" data-action="toggle-play">
+                    <span data-role="play-icon">&gt;</span>
+                    <span data-role="play-text">Play ({{ fps|default(12) }}fps)</span>
+                </button>
+            </div>
+
+            <div class="animator-frames">
+                <input type="range" min="1" max="1" value="1" data-role="frame-slider" aria-label="Frame slider">
+                <div class="animator-timeline" data-role="timeline" aria-label="Timeline"></div>
+            </div>
+        </div>
+
+        <div class="animator-statusbar">
+            <span>Ready</span>
+            <span data-role="status-coords">0, 0</span>
+        </div>
+    </div>
+</section>

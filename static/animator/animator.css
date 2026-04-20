@@ -1,0 +1,292 @@
+.animator-module {
+    --desktop-teal: #008080;
+    --window-gray: #c0c0c0;
+    --border-dark: #000;
+    --border-mid: #808080;
+    --border-light: #dfdfdf;
+    --title-blue: #000080;
+
+    font-family: Tahoma, "MS Sans Serif", sans-serif;
+    color: #000;
+    width: 100%;
+}
+
+.animator-window {
+    background: var(--window-gray);
+    border-top: 2px solid var(--border-light);
+    border-left: 2px solid var(--border-light);
+    border-right: 2px solid var(--border-dark);
+    border-bottom: 2px solid var(--border-dark);
+    box-shadow: inset 1px 1px 0 #fff, inset -1px -1px 0 var(--border-mid);
+    width: 100%;
+    max-width: 56rem;
+    margin: 0 auto;
+    padding: 4px;
+}
+
+.animator-titlebar {
+    background: var(--title-blue);
+    color: #fff;
+    font-size: 0.875rem;
+    font-weight: 700;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 2px 6px;
+}
+
+.animator-window-buttons {
+    display: flex;
+    gap: 4px;
+}
+
+.animator-window-button {
+    width: 11px;
+    height: 11px;
+    background: var(--window-gray);
+    border-top: 1px solid var(--border-light);
+    border-left: 1px solid var(--border-light);
+    border-right: 1px solid var(--border-dark);
+    border-bottom: 1px solid var(--border-dark);
+}
+
+.animator-workspace {
+    display: flex;
+    gap: 8px;
+    margin-top: 8px;
+}
+
+.animator-tools {
+    width: 58px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    flex-shrink: 0;
+}
+
+.animator-btn {
+    background: var(--window-gray);
+    border-top: 2px solid var(--border-light);
+    border-left: 2px solid var(--border-light);
+    border-right: 2px solid var(--border-dark);
+    border-bottom: 2px solid var(--border-dark);
+    box-shadow: inset 1px 1px 0 #fff, inset -1px -1px 0 var(--border-mid);
+    cursor: pointer;
+    text-align: center;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 8px 4px;
+    color: #000;
+}
+
+.animator-btn:active,
+.animator-btn.is-active {
+    border-top: 2px solid var(--border-dark);
+    border-left: 2px solid var(--border-dark);
+    border-right: 2px solid var(--border-light);
+    border-bottom: 2px solid var(--border-light);
+    box-shadow: inset 1px 1px 0 var(--border-mid), inset -1px -1px 0 #fff;
+}
+
+.animator-canvas-stage {
+    position: relative;
+    width: 100%;
+    background: #fff;
+    aspect-ratio: 4 / 3;
+    min-height: 300px;
+    border-top: 2px solid var(--border-mid);
+    border-left: 2px solid var(--border-mid);
+    border-right: 2px solid #fff;
+    border-bottom: 2px solid #fff;
+    box-shadow: inset 1px 1px 0 #000, inset -1px -1px 0 var(--border-light);
+    overflow: hidden;
+}
+
+.animator-canvas {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    touch-action: none;
+    cursor: crosshair;
+}
+
+.animator-canvas-onion {
+    pointer-events: none;
+}
+
+/* p5.js injects its canvas as a child of the main container div */
+.animator-canvas-main canvas {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    touch-action: none;
+    cursor: crosshair;
+    display: block;
+}
+
+.animator-timeline-shell {
+    margin-top: 8px;
+    display: flex;
+    gap: 8px;
+    padding: 8px 2px 2px;
+    border-top: 2px solid #fff;
+    box-shadow: 0 -1px 0 var(--border-mid);
+}
+
+.animator-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    flex-shrink: 0;
+    width: 140px;
+}
+
+.animator-frames {
+    min-width: 0;
+    width: 100%;
+    border-top: 2px solid var(--border-mid);
+    border-left: 2px solid var(--border-mid);
+    border-right: 2px solid #fff;
+    border-bottom: 2px solid #fff;
+    box-shadow: inset 1px 1px 0 #000, inset -1px -1px 0 var(--border-light);
+    padding: 6px;
+}
+
+.animator-frames input[type="range"] {
+    width: 100%;
+    margin: 0 0 8px;
+    accent-color: #0074d9;
+    /* fallback for browsers without accent-color */
+}
+
+/* Chrome, Safari, Edge */
+.animator-frames input[type="range"]::-webkit-slider-thumb {
+    background: #0074d9;
+    border: 2px solid #fff;
+    border-radius: 50%;
+    width: 16px;
+    height: 16px;
+    box-shadow: 0 0 2px #0003;
+    cursor: pointer;
+    -webkit-appearance: none;
+    appearance: none;
+}
+.animator-frames input[type="range"]:disabled::-webkit-slider-thumb {
+    background: #0074d9;
+    opacity: 0.7;
+}
+
+/* Firefox */
+.animator-frames input[type="range"]::-moz-range-thumb {
+    background: #0074d9;
+    border: 2px solid #fff;
+    border-radius: 50%;
+    width: 16px;
+    height: 16px;
+    box-shadow: 0 0 2px #0003;
+    cursor: pointer;
+}
+.animator-frames input[type="range"]:disabled::-moz-range-thumb {
+    background: #0074d9;
+    opacity: 0.7;
+}
+
+/* IE */
+.animator-frames input[type="range"]::-ms-thumb {
+    background: #0074d9;
+    border: 2px solid #fff;
+    border-radius: 50%;
+    width: 16px;
+    height: 16px;
+    box-shadow: 0 0 2px #0003;
+    cursor: pointer;
+}
+.animator-frames input[type="range"]:disabled::-ms-thumb {
+    background: #0074d9;
+    opacity: 0.7;
+}
+
+.animator-timeline {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    overflow-x: auto;
+    padding: 4px;
+    min-height: 44px;
+}
+
+.animator-timeline::-webkit-scrollbar {
+    height: 12px;
+    background: var(--border-light);
+    border: 1px solid var(--border-mid);
+}
+
+.animator-timeline::-webkit-scrollbar-thumb {
+    background: var(--window-gray);
+    border: 1px outset #fff;
+}
+
+.animator-thumb {
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    overflow: hidden;
+    flex-shrink: 0;
+}
+
+.animator-thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    pointer-events: none;
+}
+
+.animator-statusbar {
+    margin-top: 4px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-height: 24px;
+    border-top: 2px solid var(--border-mid);
+    border-left: 2px solid var(--border-mid);
+    border-right: 2px solid #fff;
+    border-bottom: 2px solid #fff;
+    box-shadow: inset 1px 1px 0 #000, inset -1px -1px 0 var(--border-light);
+    background: var(--window-gray);
+    padding: 0 8px;
+    font-size: 0.75rem;
+}
+
+.animator-statusbar span:last-child {
+    border-left: 1px solid var(--border-mid);
+    padding-left: 12px;
+}
+
+@media (max-width: 760px) {
+    .animator-workspace {
+        flex-direction: column;
+    }
+
+    .animator-tools {
+        width: 100%;
+        flex-direction: row;
+    }
+
+    .animator-tools .animator-btn {
+        width: 100%;
+        flex: 1;
+    }
+
+    .animator-timeline-shell {
+        flex-direction: column;
+    }
+
+    .animator-controls {
+        width: 100%;
+    }
+}

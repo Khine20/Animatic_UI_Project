@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Animator Workspace</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='animator/animator.css') }}">
+    <style>
+        body {
+            margin: 0;
+            width: 100%;
+            min-height: 100vh;
+            display: block;
+            background: #008080;
+        }
+
+        .workspace-page {
+            min-height: 100vh;
+            padding: 2rem 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+        }
+        .workspace-stage {
+            width: 100%;
+            max-width: 950px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            border: none;
+            padding: 0;
+        }
+        .animator-module {
+            width: 100%;
+            max-width: 900px;
+            min-width: 320px;
+            margin: 0 auto;
+        }
+    </style>
+</head>
+<body>
+    <main class="workspace-page">
+        <div class="workspace-stage" id="workspace-stage">
+            {% set animator_id = 'lesson-base' %}
+            {% set file_name = 'lesson-1.ani' %}
+            {% set fps = 12 %}
+            {% set max_frames = 30 %}
+            {% include 'components/animator_canvas.html' %}
+        </div>
+    </main>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.11.3/p5.min.js"></script>
+    <script src="{{ url_for('static', filename='animator/animator.js') }}"></script>
+    <script>
+        window.addEventListener('DOMContentLoaded', function () {
+            window.AnimaticCanvasModule.mount('#animator-root-lesson-base');
+
+            const pipText = document.getElementById('pip-text');
+            const pipNextBtn = document.getElementById('pip-next-btn');
+            const learnActions = document.querySelector('.learn-actions');
+
+            const dialogues = [
+                "Welcome to the Animator Workspace!",
+                "Before we draw, let's quickly go over the terms to leanr the basics!",
+                "A Frame is a single image in a sequence that makes up an animation.",
+                "FPS stands for Frames Per Second",
+                "Onion Skinning is a feature that allows you to see faint outlines of previous frames.",
+                "To make it animations, you need at least 5 frames to create a smoother transition between movements.",
+                "Now let's get hands-on with the canvas!",
+                "Try drawing a simple shape or character in the canvas area.",
+                "Use the toolbar on the left to select different tools and colors.",
+                "Now add a new frame and draw the same shape slightly different to create the illusion of movement.",
+                "Add 5 more frames and experiment with different movements or expressions.",
+                "Hit the 'Play' button to see your animation in action!",
+                "Great job! Now you can take the quiz to test your knowledge."
+            ];
+
+            let step = 0;
+
+            pipNextBtn.addEventListener('click', function () {
+                step++;
+                if (step < dialogues.length) {
+                    pipText.textContent = dialogues[step];
+                }
+                if (step === dialogues.length - 1) {
+                    learnActions.style.display = 'flex';
+                    pipNextBtn.style.display = 'none';
+                }
+            });
+        });
+    </script>
+</body>
+</html>

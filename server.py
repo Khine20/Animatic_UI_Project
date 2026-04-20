@@ -11,5 +11,9 @@ def home():
 def learn():
     return render_template('learn.html')
 
+@app.route('/learn/<int:lesson_id>')
+def learn_lesson(lesson_id):
+    return render_template('learn.html', lesson_id=lesson_id)
+
 if __name__ == '__main__':
     app.run(debug=True, port=8000)

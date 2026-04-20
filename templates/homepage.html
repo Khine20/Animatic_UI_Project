@@ -2,8 +2,9 @@
 <html>
 <head>
     <title>Animator</title>
-    <link rel="stylesheet" type="text/css" href="../static/homepage.css"> <!-- Adjust the path as needed -->
-    <meta charset="UTF-8"> 
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='homepage.css') }}">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 </head>
 
 <body>
@@ -14,6 +15,6 @@
          <button id="start-button" class="start-button">Start Learning</button>
     </div>
 
-    <script src="../static/homepage.js"></script> <!-- Adjust the path as needed -->
+    <script src="{{ url_for('static', filename='homepage.js') }}"></script>
 </body>
 </html>
