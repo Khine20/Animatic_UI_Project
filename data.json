@@ -43,17 +43,6 @@
         "Exactly 100 frames"
       ],
       "correct_index": 2
-    },
-    {
-      "id": 5,
-      "question": "Which principle describes an object stretching as it moves quickly and squashing when it lands?",
-      "options": [
-        "Onion skinning",
-        "Squash and stretch",
-        "Tweening",
-        "Rotoscoping"
-      ],
-      "correct_index": 1
     }
   ]
 }

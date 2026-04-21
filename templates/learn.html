@@ -11,20 +11,73 @@
             width: 100%;
             min-height: 100vh;
             display: block;
-            background: #008080;
+            background: #000000;
+            font-family: 'Courier New', Courier, monospace
         }
 
         .workspace-page {
             min-height: 100vh;
-            padding: 2rem 0;
+            padding: 4rem 2rem;
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: flex-start;
+            justify-content: center;
         }
+
+        .workspace-layout {
+            display: flex;
+            flex-direction: row;
+            gap: 3rem;
+            width: 100%;
+            max-width: 1200px;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .pip-panel {
+            background: white;
+            border: 2px solid #00942f;
+            border-radius: 8px;
+            padding: 2rem;
+            width: 300px;
+            color: black;
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .pip-name {
+            font-size: 20px;
+            font-weight: bold;
+            color: #00942f;
+            margin: 0;
+        }
+
+        .pip-dialogue {
+            font-size: 16px;
+            line-height: 1.5;
+            min-height: 80px;
+        }
+
+        .pip-btn {
+            background-color:#333333;
+            color: #fff;
+            border: 1px solid #555;
+            padding: 8px 16px;
+            font-family: inherit;
+            align-self: flex-start;
+            cursor: pointer;
+            transition: 0.2s ease;
+        }
+
+        .pip-btn:hover {
+            background-color: #00942f;
+            border-color: #00942f;
+        }
+
         .workspace-stage {
             width: 100%;
-            max-width: 950px;
+            max-width: 800px;
             margin: 0 auto;
             display: flex;
             flex-direction: column;
@@ -32,19 +85,22 @@
             border: none;
             padding: 0;
         }
+
         .animator-module {
             width: 100%;
-            max-width: 900px;
+            max-width: 800px;
             min-width: 320px;
             margin: 0 auto;
         }
+
         .learn-actions {
             width: 100%;
-            max-width: 900px;
+            max-width: 800px;
             margin: 1.5rem auto 0;
-            display: flex;
+            display: none;
             justify-content: flex-end;
         }
+
         .quiz-link-btn {
             background-color: #00942f;
             color: #fff;
@@ -55,7 +111,9 @@
             letter-spacing: 1px;
             text-decoration: none;
             cursor: pointer;
+            transition: 0.3s ease;
         }
+
         .quiz-link-btn:hover {
             background-color: #007424;
             color: #fff;
@@ -64,13 +122,23 @@
 </head>
 <body>
     <main class="workspace-page">
-        <div class="workspace-stage" id="workspace-stage">
-            {% set animator_id = 'lesson-base' %}
-            {% set file_name = 'lesson-1.ani' %}
-            {% set fps = 12 %}
-            {% set max_frames = 30 %}
-            {% include 'components/animator_canvas.html' %}
+        <div class="workspace-layout">
+            <aside class="pip-panel">
+                <h2 class="pip-name">PIP says:</h2>
+                <div class="pip-dialogue" id="pip-text">
+                    Welcome to the Animator Workspace! Ready to make your first frame?
+                </div>
+                <button class="pip-btn" id="pip-next-btn">Next Step</button>
+            </aside>
+            <div class="workspace-stage" id="workspace-stage">
+                {% set animator_id = 'lesson-base' %}
+                {% set file_name = 'lesson-1.ani' %}
+                {% set fps = 12 %}
+                {% set max_frames = 30 %}
+                {% include 'components/animator_canvas.html' %}
+            </div>
         </div>
+
         <div class="learn-actions">
             <a href="/quiz/1" class="quiz-link-btn">Take the Quiz &rarr;</a>
         </div>
@@ -78,6 +146,7 @@
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.11.3/p5.min.js"></script>
     <script src="{{ url_for('static', filename='animator/animator.js') }}"></script>
+
     <script>
         window.addEventListener('DOMContentLoaded', function () {
             window.AnimaticCanvasModule.mount('#animator-root-lesson-base');
