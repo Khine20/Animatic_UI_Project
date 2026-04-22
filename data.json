@@ -2,47 +2,40 @@
   "quiz": [
     {
       "id": 1,
-      "question": "What is a 'frame' in animation?",
+      "question": "Now it’s time to quiz you on what you just learned! How many frames is this animation? Hint: You can check using the onion tool.",
+      "type": "input",
+      "correct_answer": 30
+    },
+    {
+      "id": 2,
+      "question": "What is the onion tool used for?",
       "options": [
-        "A decorative border around the canvas",
-        "A single still image in a sequence that creates motion when played back",
-        "The outline of a character",
-        "A type of drawing tool"
+        "for crying",
+        "It allows you to see other frames transparently",
+        "It permanently makes your frames transparent",
+        "for cooking stew"
       ],
       "correct_index": 1
     },
     {
-      "id": 2,
-      "question": "What does 'FPS' stand for?",
+      "id": 3,
+      "question": "What happens when you increase the frames per second? (Increasing FPS means playing more frames within each second)",
       "options": [
-        "Frames Per Second",
-        "Final Picture Sequence",
-        "Free Pixel Style",
-        "Frame Placement System"
+        "the animation speeds up",
+        "the animation slows down"
       ],
       "correct_index": 0
-    },
-    {
-      "id": 3,
-      "question": "What is 'onion skinning' used for?",
-      "options": [
-        "Changing the canvas background color",
-        "Exporting an animation as an image",
-        "Seeing faint copies of nearby frames so you can align your drawing",
-        "Smoothing out the lines you draw"
-      ],
-      "correct_index": 2
     },
     {
       "id": 4,
       "question": "For a short bouncing-ball animation, roughly how many frames do you need at minimum to see clear motion?",
       "options": [
         "1 frame",
-        "2 frames",
+        "At least 2 frames",
         "At least 5 frames",
         "Exactly 100 frames"
       ],
-      "correct_index": 2
+      "correct_index": 1
     }
   ]
 }

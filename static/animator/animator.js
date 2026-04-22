@@ -17,12 +17,13 @@
                 width: 800,
                 height: 600,
                 fps: parseInt(root.dataset.fps || "12", 10),
-                maxFrames: parseInt(root.dataset.maxFrames || "30", 10)
+                maxFrames: parseInt(root.dataset.maxFrames || "30", 10),
+                draggable: false
             },
             options || {}
         );
 
-        const mainCanvasContainer = root.querySelector('[data-role="canvas-main"]');
+        const mainCanvas = root.querySelector('[data-role="canvas-main"]');
         const onionCanvas = root.querySelector('[data-role="canvas-onion"]');
         const timeline = root.querySelector('[data-role="timeline"]');
         const frameSlider = root.querySelector('[data-role="frame-slider"]');
@@ -31,13 +32,12 @@
         const playText = root.querySelector('[data-role="play-text"]');
         const toolButtons = root.querySelectorAll('[data-action="set-tool"]');
 
-        if (!mainCanvasContainer || !onionCanvas || !timeline || !frameSlider || !statusCoords || !playIcon || !playText) {
+        if (!mainCanvas || !onionCanvas || !timeline || !frameSlider || !statusCoords || !playIcon || !playText) {
             throw new Error("Animator module markup is incomplete.");
         }
 
+        const ctx = mainCanvas.getContext("2d", { willReadFrequently: true });
         const onionCtx = onionCanvas.getContext("2d");
-        let p5Inst = null;
-        let mainCtx = null; // set after p5 creates its canvas
 
         const state = {
             frames: [],
@@ -46,115 +46,27 @@
             tool: "pen",
             onionSkin: false,
             playing: false,
-            playInterval: null
+            playInterval: null,
+            dragPointerId: null,
+            dragOffsetX: 0,
+            dragOffsetY: 0
         };
 
         function initCanvases() {
-            onionCanvas.width = settings.width;
-            onionCanvas.height = settings.height;
+            [mainCanvas, onionCanvas].forEach((canvas) => {
+                canvas.width = settings.width;
+                canvas.height = settings.height;
+            });
+            ctx.clearRect(0, 0, settings.width, settings.height);
+        }
 
-            const sketch = function (p) {
-                let prevX = null;
-                let prevY = null;
-
-                p.setup = function () {
-                    p.pixelDensity(1);
-                    const renderer = p.createCanvas(settings.width, settings.height);
-                    renderer.canvas.style.cssText =
-                        "position:absolute;inset:0;width:100%;height:100%;touch-action:none;cursor:crosshair;display:block;";
-                    p.noLoop();
-                    p.clear();
-                    mainCtx = renderer.canvas.getContext("2d");
-                    // Setup must complete before we can access p5Inst.canvas
-                    state.frames.push(p5Inst.canvas.toDataURL());
-                    updateTimeline();
-                    bindEvents();
-                };
-
-                function applyTool() {
-                    p.noFill();
-                    p.strokeCap(p.ROUND);
-                    p.strokeJoin(p.ROUND);
-                    if (state.tool === "eraser") {
-                        p.drawingContext.globalCompositeOperation = "destination-out";
-                        p.stroke(255);
-                        p.strokeWeight(40);
-                    } else {
-                        p.drawingContext.globalCompositeOperation = "source-over";
-                        p.stroke(0);
-                        p.strokeWeight(5);
-                    }
-                }
-
-                function resetComposite() {
-                    p.drawingContext.globalCompositeOperation = "source-over";
-                }
-
-                function inBounds() {
-                    return p.mouseX >= 0 && p.mouseX <= p.width && p.mouseY >= 0 && p.mouseY <= p.height;
-                }
-
-                p.mousePressed = function () {
-                    if (state.playing || !inBounds()) { return; }
-                    state.isDrawing = true;
-                    prevX = p.mouseX;
-                    prevY = p.mouseY;
-                    applyTool();
-                    p.point(p.mouseX, p.mouseY);
-                    resetComposite();
-                };
-
-                p.mouseDragged = function () {
-                    if (!state.isDrawing) { return; }
-                    statusCoords.textContent = Math.round(p.mouseX) + ", " + Math.round(p.mouseY);
-                    applyTool();
-                    p.line(prevX, prevY, p.mouseX, p.mouseY);
-                    resetComposite();
-                    prevX = p.mouseX;
-                    prevY = p.mouseY;
-                    return false;
-                };
-
-                p.mouseReleased = function () {
-                    if (!state.isDrawing) { return; }
-                    state.isDrawing = false;
-                    prevX = null;
-                    prevY = null;
-                    saveFrame();
-                };
-
-                p.touchStarted = function () {
-                    if (state.playing) { return false; }
-                    state.isDrawing = true;
-                    prevX = p.mouseX;
-                    prevY = p.mouseY;
-                    applyTool();
-                    p.point(p.mouseX, p.mouseY);
-                    resetComposite();
-                    return false;
-                };
-
-                p.touchMoved = function () {
-                    if (!state.isDrawing) { return false; }
-                    applyTool();
-                    p.line(prevX, prevY, p.mouseX, p.mouseY);
-                    resetComposite();
-                    prevX = p.mouseX;
-                    prevY = p.mouseY;
-                    return false;
-                };
-
-                p.touchEnded = function () {
-                    if (!state.isDrawing) { return false; }
-                    state.isDrawing = false;
-                    prevX = null;
-                    prevY = null;
-                    saveFrame();
-                    return false;
-                };
-            };
-
-            p5Inst = new p5(sketch, mainCanvasContainer);
+        function getCoords(event) {
+            const rect = mainCanvas.getBoundingClientRect();
+            const clientX = event.touches ? event.touches[0].clientX : event.clientX;
+            const clientY = event.touches ? event.touches[0].clientY : event.clientY;
+            const scaleX = mainCanvas.width / rect.width;
+            const scaleY = mainCanvas.height / rect.height;
+            return { x: (clientX - rect.left) * scaleX, y: (clientY - rect.top) * scaleY };
         }
 
         function setTool(nextTool) {
@@ -165,12 +77,64 @@
         }
 
         function saveFrame() {
-            state.frames[state.currentFrame] = p5Inst.canvas.toDataURL();
+            state.frames[state.currentFrame] = mainCanvas.toDataURL();
             updateTimeline();
         }
 
+        function startDrawing(event) {
+            if (state.playing) {
+                return;
+            }
+
+            state.isDrawing = true;
+            const pos = getCoords(event);
+            ctx.lineCap = "round";
+            ctx.lineJoin = "round";
+
+            if (state.tool === "eraser") {
+                ctx.globalCompositeOperation = "destination-out";
+                ctx.lineWidth = 40;
+            } else {
+                ctx.globalCompositeOperation = "source-over";
+                ctx.strokeStyle = "#000";
+                ctx.lineWidth = 5;
+            }
+
+            ctx.beginPath();
+            ctx.moveTo(pos.x, pos.y);
+
+            if (event.cancelable) {
+                event.preventDefault();
+            }
+        }
+
+        function moveDrawing(event) {
+            const pos = getCoords(event);
+            statusCoords.textContent = Math.round(pos.x) + ", " + Math.round(pos.y);
+
+            if (!state.isDrawing) {
+                return;
+            }
+
+            ctx.lineTo(pos.x, pos.y);
+            ctx.stroke();
+
+            if (event.cancelable) {
+                event.preventDefault();
+            }
+        }
+
+        function stopDrawing() {
+            if (!state.isDrawing) {
+                return;
+            }
+
+            state.isDrawing = false;
+            saveFrame();
+        }
+
         function clearCanvas() {
-            mainCtx.clearRect(0, 0, settings.width, settings.height);
+            ctx.clearRect(0, 0, mainCanvas.width, mainCanvas.height);
             saveFrame();
         }
 
@@ -181,15 +145,15 @@
 
             saveFrame();
             state.currentFrame = state.frames.length;
-            mainCtx.clearRect(0, 0, settings.width, settings.height);
-            state.frames.push(p5Inst.canvas.toDataURL());
+            ctx.clearRect(0, 0, mainCanvas.width, mainCanvas.height);
+            state.frames.push(mainCanvas.toDataURL());
             loadFrame(state.currentFrame);
             scrollToActive();
         }
 
         function loadFrame(index) {
             state.currentFrame = index;
-            mainCtx.clearRect(0, 0, settings.width, settings.height);
+            ctx.clearRect(0, 0, mainCanvas.width, mainCanvas.height);
             onionCtx.clearRect(0, 0, onionCanvas.width, onionCanvas.height);
 
             if (state.onionSkin && !state.playing) {
@@ -211,7 +175,7 @@
 
             const image = new Image();
             image.onload = function () {
-                mainCtx.drawImage(image, 0, 0);
+                ctx.drawImage(image, 0, 0);
             };
             image.src = state.frames[state.currentFrame] || "";
 
@@ -282,8 +246,8 @@
                 state.playInterval = setInterval(function () {
                     const image = new Image();
                     image.onload = function () {
-                        mainCtx.clearRect(0, 0, settings.width, settings.height);
-                        mainCtx.drawImage(image, 0, 0);
+                        ctx.clearRect(0, 0, mainCanvas.width, mainCanvas.height);
+                        ctx.drawImage(image, 0, 0);
                     };
                     image.src = state.frames[frameIndex] || state.frames[0] || "";
                     frameSlider.value = String(frameIndex + 1);
@@ -331,8 +295,60 @@
             }
         }
 
+        function setupDragging() {
+            if (!settings.draggable) {
+                return;
+            }
+
+            const handle = root.querySelector("[data-drag-handle]");
+            if (!handle) {
+                return;
+            }
+
+            root.classList.add("is-draggable");
+            root.style.left = root.style.left || "24px";
+            root.style.top = root.style.top || "24px";
+
+            function onPointerMove(event) {
+                if (state.dragPointerId !== event.pointerId) {
+                    return;
+                }
+
+                root.style.left = event.clientX - state.dragOffsetX + "px";
+                root.style.top = event.clientY - state.dragOffsetY + "px";
+            }
+
+            function onPointerUp(event) {
+                if (state.dragPointerId !== event.pointerId) {
+                    return;
+                }
+
+                state.dragPointerId = null;
+                root.classList.remove("is-dragging");
+                handle.releasePointerCapture(event.pointerId);
+                window.removeEventListener("pointermove", onPointerMove);
+                window.removeEventListener("pointerup", onPointerUp);
+            }
+
+            handle.addEventListener("pointerdown", function (event) {
+                const rect = root.getBoundingClientRect();
+                state.dragPointerId = event.pointerId;
+                state.dragOffsetX = event.clientX - rect.left;
+                state.dragOffsetY = event.clientY - rect.top;
+                root.classList.add("is-dragging");
+                handle.setPointerCapture(event.pointerId);
+                window.addEventListener("pointermove", onPointerMove);
+                window.addEventListener("pointerup", onPointerUp);
+            });
+        }
+
         function bindEvents() {
-            // Drawing events are handled by the p5.js sketch inside initCanvases()
+            mainCanvas.addEventListener("mousedown", startDrawing);
+            mainCanvas.addEventListener("mousemove", moveDrawing);
+            mainCanvas.addEventListener("touchstart", startDrawing, { passive: false });
+            mainCanvas.addEventListener("touchmove", moveDrawing, { passive: false });
+            window.addEventListener("mouseup", stopDrawing);
+            window.addEventListener("touchend", stopDrawing);
             frameSlider.addEventListener("input", function (event) {
                 if (state.playing) return; // Ignore input during playback
                 scrubFrame(event.target.value);
@@ -342,14 +358,28 @@
 
         function destroy() {
             clearInterval(state.playInterval);
-            if (p5Inst) { p5Inst.remove(); }
             root.__animaticMounted = false;
             root.__animaticApi = null;
         }
 
         initCanvases();
+        state.frames.push(mainCanvas.toDataURL());
+        updateTimeline();
+        bindEvents();
+        setupDragging();
 
         const api = {
+            getFrames: function () {
+                return state.frames.slice();
+            },
+            loadFrames: function (incomingFrames) {
+                if (!Array.isArray(incomingFrames) || incomingFrames.length === 0) {
+                    return;
+                }
+                state.frames = incomingFrames.slice(0, settings.maxFrames);
+                state.currentFrame = 0;
+                loadFrame(0);
+            },
             setTool: setTool,
             clear: clearCanvas,
             destroy: destroy

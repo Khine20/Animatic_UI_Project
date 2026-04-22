@@ -33,6 +33,7 @@
     justify-content: space-between;
     align-items: center;
     padding: 2px 6px;
+    cursor: grab;
 }
 
 .animator-window-buttons {
@@ -113,17 +114,6 @@
 
 .animator-canvas-onion {
     pointer-events: none;
-}
-
-/* p5.js injects its canvas as a child of the main container div */
-.animator-canvas-main canvas {
-    position: absolute;
-    inset: 0;
-    width: 100%;
-    height: 100%;
-    touch-action: none;
-    cursor: crosshair;
-    display: block;
 }
 
 .animator-timeline-shell {
@@ -265,6 +255,15 @@
 .animator-statusbar span:last-child {
     border-left: 1px solid var(--border-mid);
     padding-left: 12px;
+}
+
+.animator-module.is-draggable {
+    position: absolute;
+    z-index: 20;
+}
+
+.animator-module.is-dragging .animator-titlebar {
+    cursor: grabbing;
 }
 
 @media (max-width: 760px) {

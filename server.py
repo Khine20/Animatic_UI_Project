@@ -16,7 +16,6 @@ def load_quiz_data():
 
 
 def load_user_data():
-    # Single-user app (per HW spec), so one file is enough.
     if not os.path.exists(USER_DATA_PATH):
         return {"started_at": None, "visits": [], "answers": {}}
     with open(USER_DATA_PATH, 'r') as f:
@@ -29,6 +28,8 @@ def load_user_data():
 def save_user_data(user_data):
     with open(USER_DATA_PATH, 'w') as f:
         json.dump(user_data, f, indent=2)
+
+save_user_data({"started_at": None, "visits": [], "answers": {}, "frame_count": 0})
 
 
 def log_visit(page):
@@ -46,13 +47,14 @@ def home():
     return render_template('homepage.html')
 
 
-@app.route('/start', methods=['POST'])
-def start():
-    # Called by the homepage Start button so we know a new session began.
+@app.route('/save_frame_count', methods=['POST'])
+def save_frame_count():
+    payload = request.get_json(silent=True) or {}
+    frame_count = payload.get('frame_count')
+    if not isinstance(frame_count, int) or frame_count < 0:
+        return jsonify({"ok": False, "error": "Invalid frame count"}), 400
     user_data = load_user_data()
-    user_data['started_at'] = datetime.utcnow().isoformat() + 'Z'
-    user_data['answers'] = {}
-    user_data['visits'] = []
+    user_data['frame_count'] = frame_count
     save_user_data(user_data)
     return jsonify({"ok": True})
 
@@ -78,11 +80,13 @@ def quiz(question_id):
     if question_id < 1 or question_id > total:
         return redirect(url_for('home'))
 
-    question = questions[question_id - 1]
+    question = questions[question_id - 1].copy() 
+    user_data = load_user_data()
+    if question_id == 1 and question.get('type') == 'input':
+        question['correct_answer'] = user_data.get('frame_count', 0)
+
     log_visit(f'quiz/{question_id}')
 
-    # Pre-fill if user already answered this one.
-    user_data = load_user_data()
     previous_answer = user_data.get('answers', {}).get(str(question_id))
 
     return render_template(
@@ -104,16 +108,27 @@ def submit_answer(question_id):
         return jsonify({"ok": False, "error": "Invalid question id"}), 400
 
     payload = request.get_json(silent=True) or {}
-    selected_index = payload.get('selected_index')
+    question = questions[question_id - 1]
 
-    if not isinstance(selected_index, int):
-        return jsonify({"ok": False, "error": "selected_index must be an int"}), 400
+    if question.get('type') == 'input':
+        answer = payload.get('answer')
+        if not isinstance(answer, str) or not answer.strip():
+            return jsonify({"ok": False, "error": "answer must be a non-empty string"}), 400
+        user_answer = {
+            "answer": answer.strip(),
+            "answered_at": datetime.utcnow().isoformat() + 'Z'
+        }
+    else:
+        selected_index = payload.get('selected_index')
+        if not isinstance(selected_index, int):
+            return jsonify({"ok": False, "error": "selected_index must be an int"}), 400
+        user_answer = {
+            "selected_index": selected_index,
+            "answered_at": datetime.utcnow().isoformat() + 'Z'
+        }
 
     user_data = load_user_data()
-    user_data.setdefault('answers', {})[str(question_id)] = {
-        "selected_index": selected_index,
-        "answered_at": datetime.utcnow().isoformat() + 'Z'
-    }
+    user_data.setdefault('answers', {})[str(question_id)] = user_answer
     save_user_data(user_data)
 
     next_url = (
@@ -136,17 +151,26 @@ def quiz_result():
     for q in questions:
         qid = str(q['id'])
         user_answer = answers.get(qid)
-        selected_index = user_answer.get('selected_index') if user_answer else None
-        is_correct = selected_index == q['correct_index']
+        if q.get('type') == 'input':
+            answer = user_answer.get('answer') if user_answer else None
+            is_correct = answer == str(q['correct_answer']) if answer else False
+        else:
+            selected_index = user_answer.get('selected_index') if user_answer else None
+            is_correct = selected_index == q['correct_index']
         if is_correct:
             score += 1
-        results.append({
+        result = {
             "question": q['question'],
-            "options": q['options'],
-            "correct_index": q['correct_index'],
-            "selected_index": selected_index,
             "is_correct": is_correct
-        })
+        }
+        if q.get('type') == 'input':
+            result["user_answer"] = answer
+            result["correct_answer"] = q['correct_answer']
+        else:
+            result["options"] = q['options']
+            result["correct_index"] = q['correct_index']
+            result["selected_index"] = selected_index
+        results.append(result)
 
     log_visit('quiz/result')
     return render_template(

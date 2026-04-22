@@ -59,6 +59,24 @@
             min-height: 80px;
         }
 
+        .pip-hint {
+            font-size: 14px;
+            line-height: 1.4;
+            color: #fff;
+            min-height: 48px;
+            margin-top: 0.75rem;
+            max-width: 300px;
+        }
+
+        .hint-row {
+            width: 100%;
+            max-width: 1200px;
+            display: flex;
+            justify-content: flex-start;
+            padding-top: 1rem;
+            margin-left: 2rem;
+        }
+
         .pip-btn {
             background-color:#333333;
             color: #fff;
@@ -73,6 +91,31 @@
         .pip-btn:hover {
             background-color: #00942f;
             border-color: #00942f;
+        }
+
+        .mission-panel {
+            background: white;
+            border: 2px solid #00942f;
+            border-radius: 8px;
+            padding: 2rem;
+            width: 300px;
+            color: black;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .mission-name {
+            font-size: 20px;
+            font-weight: bold;
+            color: #00942f;
+            margin: 0;
+        }
+
+        .mission-text {
+            font-size: 16px;
+            line-height: 1.5;
+            min-height: 120px;
         }
 
         .workspace-stage {
@@ -126,7 +169,7 @@
             <aside class="pip-panel">
                 <h2 class="pip-name">PIP says:</h2>
                 <div class="pip-dialogue" id="pip-text">
-                    Welcome to the Animator Workspace! Ready to make your first frame?
+                    Hi, I’m Pip! I’ll be your guide as you create your first animation.
                 </div>
                 <button class="pip-btn" id="pip-next-btn">Next Step</button>
             </aside>
@@ -137,51 +180,102 @@
                 {% set max_frames = 30 %}
                 {% include 'components/animator_canvas.html' %}
             </div>
+            <aside class="mission-panel">
+                <h2 class="mission-name">Mission</h2>
+                <div class="mission-text" id="mission-text"></div>
+            </aside>
+
+        </div>
+
+        <div class="hint-row">
+            <div class="pip-hint" id="pip-hint"></div>
         </div>
 
         <div class="learn-actions">
-            <a href="/quiz/1" class="quiz-link-btn">Take the Quiz &rarr;</a>
+            <button class="quiz-link-btn" id="quiz-btn">Take the Quiz &rarr;</button>
         </div>
     </main>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.11.3/p5.min.js"></script>
     <script src="{{ url_for('static', filename='animator/animator.js') }}"></script>
 
     <script>
         window.addEventListener('DOMContentLoaded', function () {
-            window.AnimaticCanvasModule.mount('#animator-root-lesson-base');
+            window.AnimaticCanvasModule.mount('#animator-root-lesson-base', {
+                draggable: false
+            });
+            let frameCount = 0;
 
+            const addFrameBtn = document.querySelector('[data-action="add-frame"]');
+            if (addFrameBtn) {
+                addFrameBtn.addEventListener('click', function() {
+                    frameCount++;
+                });
+            }
             const pipText = document.getElementById('pip-text');
+            const pipHint = document.getElementById('pip-hint');
+            const missionText = document.getElementById('mission-text');
             const pipNextBtn = document.getElementById('pip-next-btn');
             const learnActions = document.querySelector('.learn-actions');
 
             const dialogues = [
-                "Welcome to the Animator Workspace!",
-                "Before we draw, let's quickly go over the terms to leanr the basics!",
-                "A Frame is a single image in a sequence that makes up an animation.",
-                "FPS stands for Frames Per Second",
-                "Onion Skinning is a feature that allows you to see faint outlines of previous frames.",
-                "To make it animations, you need at least 5 frames to create a smoother transition between movements.",
-                "Now let's get hands-on with the canvas!",
-                "Try drawing a simple shape or character in the canvas area.",
-                "Use the toolbar on the left to select different tools and colors.",
-                "Now add a new frame and draw the same shape slightly different to create the illusion of movement.",
-                "Add 5 more frames and experiment with different movements or expressions.",
+                "Hi, I’m Pip! I’ll be your guide as you create your first animation.",
+                "At the end of this tutorial, you will have something like this:",
+                "I’ve already placed the “ground” for you! First, draw a circle. Think about where you’d want to draw the circle.",
+                "Great! Now click the onion skin tool. The onion tool allows you to keep track of your previous and future frames.",
+                "Create a new frame.",
+                "Now you’re ready! Keep drawing the ball as it moves closer to the ground. Do this until the ball hits the ground!",
+                "You’ve got the hang of it! Do the exact same thing, but this time with the ball bouncing back up. Stop when the ball is as high as the first frame. Can you guess why?",
                 "Hit the 'Play' button to see your animation in action!",
-                "Great job! Now you can take the quiz to test your knowledge."
+                "Congratulations, you just created your first animation! Play your animation and it’ll run through your frames quickly."
             ];
 
+            const hints = {
+                2: "Hint: Where would the ball start if you were dropped it?",
+                9: "Hint: You’ll need to add more frames each time you move the ball."
+            };
+
+            const mission = [
+                "Click next.",
+                "Click next.",
+                "Draw a ball. Consider the placement. Click next when finished.",
+                "Click the onion skin tool.",
+                "Create a new frame.",
+                "Create more frames as you draw the ball moving downward. Click next when you’re finished.",
+                "Create more frames as you draw the ball moving upward. Click next when you’re finished.",
+                "Click play. Click next when you’re ready for the quiz!"
+            ]
+
             let step = 0;
+
+            const updatePip = function () {
+                pipText.textContent = dialogues[step];
+                pipHint.textContent = hints[step] || '';
+                missionText.textContent = mission[step] || '';
+            };
 
             pipNextBtn.addEventListener('click', function () {
                 step++;
                 if (step < dialogues.length) {
-                    pipText.textContent = dialogues[step];
+                    updatePip();
                 }
                 if (step === dialogues.length - 1) {
                     learnActions.style.display = 'flex';
                     pipNextBtn.style.display = 'none';
                 }
+            });
+
+            updatePip();
+
+            document.getElementById('quiz-btn').addEventListener('click', function() {
+                fetch('/save_frame_count', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ frame_count: frameCount })
+                }).then(response => response.json()).then(data => {
+                    if (data.ok) {
+                        window.location.href = '/quiz/1';
+                    }
+                });
             });
         });
     </script>

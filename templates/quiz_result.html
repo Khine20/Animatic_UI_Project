@@ -78,12 +78,12 @@
 
         {% for r in results %}
             <div class="q-card p-3 p-md-4 mb-3
-                {% if r.selected_index is none %}skipped
+                {% if r.user_answer is none and r.selected_index is none %}skipped
                 {% elif r.is_correct %}correct
                 {% else %}incorrect{% endif %}">
                 <div class="d-flex justify-content-between align-items-start mb-2">
                     <strong>Q{{ loop.index }}. {{ r.question }}</strong>
-                    {% if r.selected_index is none %}
+                    {% if r.user_answer is none and r.selected_index is none %}
                         <span class="badge badge-skipped">Skipped</span>
                     {% elif r.is_correct %}
                         <span class="badge badge-correct">Correct</span>
@@ -92,18 +92,29 @@
                     {% endif %}
                 </div>
 
-                {% for option in r.options %}
-                    {% set is_user = (r.selected_index == loop.index0) %}
-                    {% set is_answer = (r.correct_index == loop.index0) %}
-                    <div class="option-row
-                        {% if is_user and r.is_correct %}your-correct{% endif %}
-                        {% if is_user and not r.is_correct %}your-wrong{% endif %}
-                        {% if is_answer %}actual-correct{% endif %}">
-                        {{ ['A','B','C','D','E','F'][loop.index0] }}. {{ option }}
-                        {% if is_user %}<span class="text-white-50"> — your answer</span>{% endif %}
-                        {% if is_answer and not is_user %}<span class="text-white-50"> — correct answer</span>{% endif %}
+                {% if r.user_answer is defined %}
+                    <div class="option-row {% if r.is_correct %}your-correct{% else %}your-wrong{% endif %}">
+                        Your answer: {{ r.user_answer }}
                     </div>
-                {% endfor %}
+                    {% if not r.is_correct %}
+                        <div class="option-row actual-correct">
+                            Correct answer: {{ r.correct_answer }}
+                        </div>
+                    {% endif %}
+                {% else %}
+                    {% for option in r.options %}
+                        {% set is_user = (r.selected_index == loop.index0) %}
+                        {% set is_answer = (r.correct_index == loop.index0) %}
+                        <div class="option-row
+                            {% if is_user and r.is_correct %}your-correct{% endif %}
+                            {% if is_user and not r.is_correct %}your-wrong{% endif %}
+                            {% if is_answer %}actual-correct{% endif %}">
+                            {{ ['A','B','C','D','E','F'][loop.index0] }}. {{ option }}
+                            {% if is_user %}<span class="text-white-50"> — your answer</span>{% endif %}
+                            {% if is_answer and not is_user %}<span class="text-white-50"> — correct answer</span>{% endif %}
+                        </div>
+                    {% endfor %}
+                {% endif %}
             </div>
         {% endfor %}
 

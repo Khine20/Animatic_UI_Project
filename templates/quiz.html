@@ -73,15 +73,19 @@
         <div class="quiz-card p-4 p-md-5">
             <h2 class="h4 mb-4">{{ question.question }}</h2>
 
-            <div id="options" class="d-grid gap-3">
-                {% for option in question.options %}
-                    <button type="button"
-                            class="option-btn"
-                            data-index="{{ loop.index0 }}">
-                        {{ ['A','B','C','D','E','F'][loop.index0] }}. {{ option }}
-                    </button>
-                {% endfor %}
-            </div>
+            {% if question.type == 'input' %}
+                <input type="number" id="frame-input" class="form-control mb-3" placeholder="Enter number of frames" min="1">
+            {% else %}
+                <div id="options" class="d-grid gap-3">
+                    {% for option in question.options %}
+                        <button type="button"
+                                class="option-btn"
+                                data-index="{{ loop.index0 }}">
+                            {{ ['A','B','C','D','E','F'][loop.index0] }}. {{ option }}
+                        </button>
+                    {% endfor %}
+                </div>
+            {% endif %}
 
             <div class="d-flex justify-content-between align-items-center mt-4">
                 {% if question_id > 1 %}
@@ -102,30 +106,47 @@
         $(function () {
             var questionId = {{ question_id }};
             var previousAnswer = {{ previous_answer | tojson if previous_answer is not none else 'null' }};
+            var questionType = '{{ question.type }}';
             var selectedIndex = null;
+            var inputValue = null;
 
-            if (previousAnswer && typeof previousAnswer.selected_index === 'number') {
-                selectedIndex = previousAnswer.selected_index;
-                $('.option-btn[data-index="' + selectedIndex + '"]').addClass('selected');
-                $('#next-btn').prop('disabled', false);
+            if (questionType === 'input') {
+                if (previousAnswer && typeof previousAnswer.answer === 'string') {
+                    inputValue = previousAnswer.answer;
+                    $('#frame-input').val(inputValue);
+                    $('#next-btn').prop('disabled', false);
+                }
+
+                $('#frame-input').on('input', function () {
+                    inputValue = $(this).val().trim();
+                    $('#next-btn').prop('disabled', inputValue === '');
+                });
+            } else {
+                if (previousAnswer && typeof previousAnswer.selected_index === 'number') {
+                    selectedIndex = previousAnswer.selected_index;
+                    $('.option-btn[data-index="' + selectedIndex + '"]').addClass('selected');
+                    $('#next-btn').prop('disabled', false);
+                }
+
+                $('.option-btn').on('click', function () {
+                    $('.option-btn').removeClass('selected');
+                    $(this).addClass('selected');
+                    selectedIndex = parseInt($(this).data('index'), 10);
+                    $('#next-btn').prop('disabled', false);
+                });
             }
 
-            $('.option-btn').on('click', function () {
-                $('.option-btn').removeClass('selected');
-                $(this).addClass('selected');
-                selectedIndex = parseInt($(this).data('index'), 10);
-                $('#next-btn').prop('disabled', false);
-            });
-
             $('#next-btn').on('click', function () {
-                if (selectedIndex === null) return;
+                if ((questionType === 'input' && inputValue === null) || (questionType !== 'input' && selectedIndex === null)) return;
                 var $btn = $(this).prop('disabled', true).text('Saving...');
+
+                var data = questionType === 'input' ? { answer: inputValue } : { selected_index: selectedIndex };
 
                 $.ajax({
                     url: '/quiz/' + questionId + '/answer',
                     method: 'POST',
                     contentType: 'application/json',
-                    data: JSON.stringify({ selected_index: selectedIndex })
+                    data: JSON.stringify(data)
                 }).done(function (resp) {
                     window.location.href = resp.next_url;
                 }).fail(function () {
