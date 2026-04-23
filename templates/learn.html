@@ -174,7 +174,10 @@
                 <div class="pip-dialogue" id="pip-text">
                     Hi, I’m Pip! I’ll be your guide as you create your first animation.
                 </div>
-                <button class="pip-btn" id="pip-next-btn">Next Step</button>
+                <div style="display: flex; gap: 0.5rem;">
+                    <button class="pip-btn" id="pip-prev-btn" style="display: none;">⬅️</button>
+                    <button class="pip-btn" id="pip-next-btn">➡️</button>
+                </div>
             </aside>
             <div class="workspace-stage" id="workspace-stage">
                 {% set animator_id = 'lesson-base' %}
@@ -184,7 +187,7 @@
                 {% include 'components/animator_canvas.html' %}
             </div>
             <aside class="mission-panel">
-                <h2 class="mission-name">Mission</h2>
+                <h2 class="mission-name" id="mission-name">Mission</h2>
                 <div class="mission-text" id="mission-text"></div>
             </aside>
 
@@ -217,12 +220,15 @@
             const pipText = document.getElementById('pip-text');
             const pipHint = document.getElementById('pip-hint');
             const missionText = document.getElementById('mission-text');
+            const missionName = document.getElementById('mission-name');
             const pipNextBtn = document.getElementById('pip-next-btn');
+            const pipPrevBtn = document.getElementById('pip-prev-btn');
             const learnActions = document.querySelector('.learn-actions');
 
             const dialogues = [
                 "Hi, I’m Pip! I’ll be your guide as you create your first animation.",
                 "At the end of this tutorial, you will have something like this:",
+                "Let's learn about the tools first! Hover over each tool to see what it does. Click next when you’re ready to start drawing!",
                 "I’ve already placed the “ground” for you! First, draw a circle. Think about where you’d want to draw the circle.",
                 "Great! Now click the onion skin tool. The onion tool allows you to keep track of your previous and future frames.",
                 "Create a new frame.",
@@ -240,34 +246,85 @@
             const mission = [
                 "Click next.",
                 "Click next.",
+                "Explore the tools.",
                 "Draw a ball. Consider the placement. Click next when finished.",
                 "Click the onion skin tool.",
                 "Create a new frame.",
                 "Create more frames as you draw the ball moving downward. Click next when you’re finished.",
                 "Create more frames as you draw the ball moving upward. Click next when you’re finished.",
                 "Click play. Click next when you’re ready for the quiz!"
-            ]
+            ];
 
             let step = 0;
+            let currentToolTip = null; // Track the currently hovered tool tooltip
+            const defaultStep2Mission = mission[2]; // Store the default step 2 mission text
+            const defaultMissionName = 'Mission'; // Store the default mission title
 
             const updatePip = function () {
                 pipText.textContent = dialogues[step];
                 pipHint.textContent = hints[step] || '';
-                missionText.textContent = mission[step] || '';
+                
+                // For step 2, use the currently hovered tooltip if available, otherwise use default
+                if (step === 2) {
+                    missionText.textContent = currentToolTip || defaultStep2Mission;
+                    missionName.textContent = currentToolTip ? 'Tool' : defaultMissionName;
+                } else {
+                    missionText.textContent = mission[step] || '';
+                    missionName.textContent = defaultMissionName;
+                    currentToolTip = null; // Clear tooltip when leaving step 2
+                }
             };
 
+
             pipNextBtn.addEventListener('click', function () {
-                step++;
-                if (step < dialogues.length) {
+                if (step < dialogues.length - 1) {
+                    step++;
                     updatePip();
                 }
                 if (step === dialogues.length - 1) {
                     learnActions.style.display = 'flex';
                     pipNextBtn.style.display = 'none';
                 }
+                pipPrevBtn.style.display = step > 0 ? 'inline-block' : 'none';
             });
 
+            pipPrevBtn.addEventListener('click', function () {
+                if (step > 0) {
+                    step--;
+                    updatePip();
+                    pipNextBtn.style.display = 'inline-block';
+                    learnActions.style.display = 'none';
+                }
+                pipPrevBtn.style.display = step > 0 ? 'inline-block' : 'none';
+            });
+
+
             updatePip();
+            pipPrevBtn.style.display = step > 0 ? 'inline-block' : 'none';
+
+            // Step 2 tool tooltip integration: show tool descriptions in mission panel
+            // Use event delegation to catch both static and dynamically added elements with data-tooltip
+            const animatorRoot = document.querySelector('#animator-root-lesson-base');
+            
+            if (animatorRoot) {
+                animatorRoot.addEventListener('mouseover', function (e) {
+                    const button = e.target.closest('[data-tooltip]');
+                    if (button && step === 2) {
+                        currentToolTip = button.dataset.tooltip;
+                        missionText.textContent = currentToolTip;
+                        missionName.textContent = 'Tool';
+                    }
+                });
+                
+                animatorRoot.addEventListener('mouseout', function (e) {
+                    const button = e.target.closest('[data-tooltip]');
+                    if (button && step === 2) {
+                        currentToolTip = null;
+                        missionText.textContent = defaultStep2Mission;
+                        missionName.textContent = defaultMissionName;
+                    }
+                });
+            }
 
             document.getElementById('quiz-btn').addEventListener('click', function() {
                 fetch('/save_frame_count', {

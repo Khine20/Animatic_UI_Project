@@ -33,7 +33,7 @@
     justify-content: space-between;
     align-items: center;
     padding: 2px 6px;
-    cursor: grab;
+    cursor: default;
 }
 
 .animator-window-buttons {
@@ -63,6 +63,25 @@
     flex-direction: column;
     gap: 6px;
     flex-shrink: 0;
+    height: 100%;
+}
+
+.animator-btn-del {
+    background: #e74c3c !important;
+    color: #fff !important;
+    border-top: 2px solid #ffb3b3 !important;
+    border-left: 2px solid #ffb3b3 !important;
+    border-right: 2px solid #a93226 !important;
+    border-bottom: 2px solid #a93226 !important;
+    margin-top: auto;
+    font-weight: bold;
+    letter-spacing: 1px;
+    transition: opacity 0.2s;
+}
+.animator-btn-del:disabled,
+.animator-btn-del[disabled] {
+    opacity: 0.5;
+    cursor: not-allowed;
 }
 
 .animator-btn {
@@ -229,11 +248,32 @@
     flex-shrink: 0;
 }
 
+.animator-thumb-add {
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    margin-left: 2px;
+    font-size: 1.5rem;
+    font-weight: bold;
+}
+
 .animator-thumb img {
     width: 100%;
     height: 100%;
     object-fit: contain;
     pointer-events: none;
+}
+
+.animator-thumb.is-dragging-thumb {
+    opacity: 0.4;
+}
+
+.animator-thumb.is-drag-over {
+    outline: 2px dashed var(--border-dark);
+    outline-offset: -4px;
 }
 
 .animator-statusbar {
@@ -262,6 +302,10 @@
     z-index: 20;
 }
 
+.animator-module.is-draggable .animator-titlebar {
+    cursor: grab;
+}
+
 .animator-module.is-dragging .animator-titlebar {
     cursor: grabbing;
 }
@@ -288,4 +332,29 @@
     .animator-controls {
         width: 100%;
     }
+}
+
+.animator-tooltip {
+    position: fixed;
+    z-index: 10000;
+    max-width: 240px;
+    padding: 4px 8px;
+    background: #ffffe1;
+    border-top: 1px solid #fff;
+    border-left: 1px solid #fff;
+    border-right: 1px solid #000;
+    border-bottom: 1px solid #000;
+    box-shadow: inset 1px 1px 0 #dfdfdf;
+    font-size: 11px;
+    font-family: Tahoma, "MS Sans Serif", sans-serif;
+    color: #000;
+    pointer-events: none;
+    opacity: 0;
+    transform: translateY(2px);
+    transition: opacity 100ms linear, transform 100ms linear;
+}
+
+.animator-tooltip.is-visible {
+    opacity: 1;
+    transform: translateY(0);
 }

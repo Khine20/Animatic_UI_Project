@@ -1,6 +1,82 @@
 (function (global) {
     "use strict";
 
+    let tooltipEl = null;
+    let tooltipTimer = null;
+    let tooltipTarget = null;
+
+    function initTooltip() {
+        if (tooltipEl) return;
+        tooltipEl = document.createElement("div");
+        tooltipEl.className = "animator-tooltip";
+        tooltipEl.setAttribute("role", "tooltip");
+        tooltipEl.setAttribute("aria-hidden", "true");
+        document.body.appendChild(tooltipEl);
+
+        document.addEventListener("mouseover", function (e) {
+            if (!e.target || typeof e.target.closest !== "function") return;
+            const el = e.target.closest("[data-tooltip]");
+            if (!el) {
+                hideTooltip();
+                return;
+            }
+            if (tooltipTarget !== el) {
+                tooltipTarget = el;
+                showTooltip(el, e.clientX, e.clientY);
+            }
+        });
+
+        document.addEventListener("mousemove", function (e) {
+            if (tooltipTarget && tooltipEl.classList.contains("is-visible")) {
+                placeTooltip(e.clientX, e.clientY);
+            }
+        });
+
+        document.addEventListener("mouseout", function (e) {
+            if (!tooltipTarget) return;
+            if (!e.target || typeof e.target.closest !== "function") return;
+            const fromEl = e.target.closest("[data-tooltip]");
+            if (fromEl !== tooltipTarget) return;
+
+            const toEl = e.relatedTarget;
+            if (toEl && tooltipTarget.contains(toEl)) return;
+
+            hideTooltip();
+        });
+    }
+
+    function hideTooltip() {
+        clearTimeout(tooltipTimer);
+        if (tooltipEl) {
+            tooltipEl.classList.remove("is-visible");
+            tooltipEl.setAttribute("aria-hidden", "true");
+        }
+        tooltipTarget = null;
+    }
+
+    function placeTooltip(x, y) {
+        if (!tooltipEl) return;
+        const offset = 14;
+        const rect = tooltipEl.getBoundingClientRect();
+        const maxLeft = window.innerWidth - rect.width - 8;
+        const maxTop = window.innerHeight - rect.height - 8;
+
+        tooltipEl.style.left = Math.max(8, Math.min(x + offset, maxLeft)) + "px";
+        tooltipEl.style.top = Math.max(8, Math.min(y + offset, maxTop)) + "px";
+    }
+
+    function showTooltip(el, x, y) {
+        const text = el.dataset.tooltip;
+        if (!text) return;
+        clearTimeout(tooltipTimer);
+        tooltipTimer = setTimeout(function () {
+            tooltipEl.textContent = text;
+            tooltipEl.classList.add("is-visible");
+            tooltipEl.setAttribute("aria-hidden", "false");
+            placeTooltip(x, y);
+        }, 120);
+    }
+
     function mount(target, options) {
         const root = typeof target === "string" ? document.querySelector(target) : target;
 
@@ -49,7 +125,8 @@
             playInterval: null,
             dragPointerId: null,
             dragOffsetX: 0,
-            dragOffsetY: 0
+            dragOffsetY: 0,
+            dragSourceIndex: null
         };
 
         function initCanvases() {
@@ -203,10 +280,21 @@
             frameSlider.max = String(Math.max(1, state.frames.length));
             frameSlider.value = String(state.currentFrame + 1);
 
+                // DEL button state
+                const delBtn = root.querySelector('.animator-btn-del');
+                if (delBtn) {
+                    if (state.frames.length <= 1) {
+                        delBtn.disabled = true;
+                    } else {
+                        delBtn.disabled = false;
+                    }
+                }
+
             state.frames.forEach((data, index) => {
                 const button = document.createElement("button");
                 button.type = "button";
                 button.className = "animator-btn animator-thumb" + (index === state.currentFrame ? " is-active" : "");
+                button.dataset.tooltip = "Frame " + (index + 1) + ": click to jump to this frame.";
 
                 if (data && data.length > 100) {
                     const thumb = document.createElement("img");
@@ -223,8 +311,77 @@
                     }
                 });
 
+                button.draggable = true;
+
+                button.addEventListener("dragstart", function (e) {
+                    if (state.playing) {
+                        e.preventDefault();
+                        return;
+                    }
+                    state.dragSourceIndex = index;
+                    e.dataTransfer.effectAllowed = "move";
+                    e.dataTransfer.setData("text/plain", index);
+                    setTimeout(() => button.classList.add("is-dragging-thumb"), 0);
+                });
+
+                button.addEventListener("dragend", function (e) {
+                    button.classList.remove("is-dragging-thumb");
+                    timeline.querySelectorAll('.is-drag-over').forEach(el => el.classList.remove('is-drag-over'));
+                    state.dragSourceIndex = null;
+                });
+
+                button.addEventListener("dragover", function (e) {
+                    e.preventDefault();
+                    e.dataTransfer.dropEffect = "move";
+                });
+
+                button.addEventListener("dragenter", function (e) {
+                    e.preventDefault();
+                    if (state.dragSourceIndex !== null && state.dragSourceIndex !== index) {
+                        button.classList.add("is-drag-over");
+                    }
+                });
+
+                button.addEventListener("dragleave", function (e) {
+                    button.classList.remove("is-drag-over");
+                });
+
+                button.addEventListener("drop", function (e) {
+                    e.preventDefault();
+                    button.classList.remove("is-drag-over");
+                    if (state.dragSourceIndex === null || state.dragSourceIndex === index) return;
+
+                    const draggedFrame = state.frames.splice(state.dragSourceIndex, 1)[0];
+                    state.frames.splice(index, 0, draggedFrame);
+
+                    if (state.currentFrame === state.dragSourceIndex) {
+                        state.currentFrame = index;
+                    } else if (state.currentFrame > state.dragSourceIndex && state.currentFrame <= index) {
+                        state.currentFrame--;
+                    } else if (state.currentFrame < state.dragSourceIndex && state.currentFrame >= index) {
+                        state.currentFrame++;
+                    }
+
+                    loadFrame(state.currentFrame);
+                });
+
                 timeline.appendChild(button);
             });
+
+            // Add-frame button at end
+            if (state.frames.length < settings.maxFrames) {
+                const addBtn = document.createElement("button");
+                addBtn.type = "button";
+                addBtn.className = "animator-thumb-add";
+                addBtn.title = "Add Frame";
+                addBtn.setAttribute('aria-label', 'Add Frame');
+                addBtn.dataset.tooltip = "Add Frame: create the next frame in your animation.";
+                addBtn.textContent = "+";
+                addBtn.onclick = function() {
+                    if (!state.playing) addFrame();
+                };
+                timeline.appendChild(addBtn);
+            }
         }
 
         function scrollToActive() {
@@ -292,20 +449,129 @@
 
             if (action === "toggle-play") {
                 togglePlay();
+                    return;
+                }
+
+                if (action === "delete-frame") {
+                    if (state.frames.length <= 1) return;
+                    showDeleteConfirm(() => {
+                        state.frames.splice(state.currentFrame, 1);
+                        if (state.currentFrame >= state.frames.length) {
+                            state.currentFrame = state.frames.length - 1;
+                        }
+                        loadFrame(state.currentFrame);
+                    });
             }
+        }
+        // Win98-style confirmation dialog
+        function showDeleteConfirm(onConfirm) {
+            // Remove any existing dialog
+            let old = document.getElementById('animator-del-confirm');
+            if (old) old.remove();
+
+            const overlay = document.createElement('div');
+            overlay.id = 'animator-del-confirm';
+            overlay.style.position = 'fixed';
+            overlay.style.zIndex = '99999';
+            overlay.style.left = '0';
+            overlay.style.top = '0';
+            overlay.style.width = '100vw';
+            overlay.style.height = '100vh';
+            overlay.style.background = 'rgba(0,0,0,0.15)';
+            overlay.style.display = 'flex';
+            overlay.style.alignItems = 'center';
+            overlay.style.justifyContent = 'center';
+
+            const win = document.createElement('div');
+            win.style.background = '#c0c0c0';
+            win.style.border = '2px solid #000';
+            win.style.boxShadow = 'inset 1px 1px 0 #fff, inset -1px -1px 0 #808080';
+            win.style.minWidth = '260px';
+            win.style.maxWidth = '90vw';
+            win.style.fontFamily = 'Tahoma, "MS Sans Serif", sans-serif';
+            win.style.color = '#000';
+            win.style.padding = '0';
+            win.style.display = 'flex';
+            win.style.flexDirection = 'column';
+            win.style.alignItems = 'stretch';
+
+            const title = document.createElement('div');
+            title.textContent = 'Confirm Delete';
+            title.style.background = '#000080';
+            title.style.color = '#fff';
+            title.style.fontWeight = 'bold';
+            title.style.fontSize = '13px';
+            title.style.padding = '3px 8px';
+            title.style.borderBottom = '1px solid #808080';
+            win.appendChild(title);
+
+            const msg = document.createElement('div');
+            msg.textContent = 'Are you sure you want to delete this frame?';
+            msg.style.padding = '18px 16px 8px 16px';
+            msg.style.fontSize = '13px';
+            win.appendChild(msg);
+
+            const btnRow = document.createElement('div');
+            btnRow.style.display = 'flex';
+            btnRow.style.justifyContent = 'flex-end';
+            btnRow.style.gap = '10px';
+            btnRow.style.padding = '8px 16px 14px 16px';
+
+            const okBtn = document.createElement('button');
+            okBtn.textContent = 'OK';
+            okBtn.style.background = '#c0c0c0';
+            okBtn.style.border = '2px outset #fff';
+            okBtn.style.padding = '2px 18px';
+            okBtn.style.fontFamily = 'inherit';
+            okBtn.style.fontSize = '13px';
+            okBtn.style.marginRight = '4px';
+            okBtn.style.cursor = 'pointer';
+            okBtn.onmouseenter = () => okBtn.style.background = '#e0e0e0';
+            okBtn.onmouseleave = () => okBtn.style.background = '#c0c0c0';
+            okBtn.onclick = function() {
+                overlay.remove();
+                onConfirm();
+            };
+
+            const cancelBtn = document.createElement('button');
+            cancelBtn.textContent = 'Cancel';
+            cancelBtn.style.background = '#c0c0c0';
+            cancelBtn.style.border = '2px outset #fff';
+            cancelBtn.style.padding = '2px 18px';
+            cancelBtn.style.fontFamily = 'inherit';
+            cancelBtn.style.fontSize = '13px';
+            cancelBtn.style.cursor = 'pointer';
+            cancelBtn.onmouseenter = () => cancelBtn.style.background = '#e0e0e0';
+            cancelBtn.onmouseleave = () => cancelBtn.style.background = '#c0c0c0';
+            cancelBtn.onclick = function() {
+                overlay.remove();
+            };
+
+            btnRow.appendChild(okBtn);
+            btnRow.appendChild(cancelBtn);
+            win.appendChild(btnRow);
+            overlay.appendChild(win);
+            document.body.appendChild(overlay);
+
+            // Focus OK for keyboard
+            okBtn.focus();
         }
 
         function setupDragging() {
-            if (!settings.draggable) {
-                return;
-            }
-
-            const handle = root.querySelector("[data-drag-handle]");
+            const handle = root.querySelector(".animator-titlebar");
             if (!handle) {
                 return;
             }
 
+            if (!settings.draggable) {
+                root.classList.remove("is-draggable");
+                root.classList.remove("is-dragging");
+                handle.removeAttribute("data-drag-handle");
+                return;
+            }
+
             root.classList.add("is-draggable");
+            handle.setAttribute("data-drag-handle", "true");
             root.style.left = root.style.left || "24px";
             root.style.top = root.style.top || "24px";
 
@@ -362,6 +628,7 @@
             root.__animaticApi = null;
         }
 
+        initTooltip();
         initCanvases();
         state.frames.push(mainCanvas.toDataURL());
         updateTimeline();
