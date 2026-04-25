@@ -2,9 +2,13 @@
   "quiz": [
     {
       "id": 1,
-      "question": "Now it’s time to quiz you on what you just learned! How many frames is this animation? Hint: You can check using the onion tool.",
+      "question": "How many frames is the animation you just made?",
       "type": "input",
-      "correct_answer": 30
+      "correct_answer": 30,
+      "pip_intro": "Now it's time to test what you learned! Let's start easy. Counting your frames is a great habit for any animator.",
+      "pip_hint": "Look at the timeline at the bottom of the canvas, or click the onion-skin tool to peek at all your frames at once.",
+      "pip_correct": "Spot on! You really paid attention while you were drawing.",
+      "pip_wrong": "Close, but not quite. Counting frames is a great habit — you'll get it next time."
     },
     {
       "id": 2,
@@ -15,16 +19,24 @@
         "It permanently makes your frames transparent",
         "for cooking stew"
       ],
-      "correct_index": 1
+      "correct_index": 1,
+      "pip_intro": "Remember the tool we used to keep frames lined up? Quick reminder time!",
+      "pip_hint": "Think back to when you needed to know where the ball was in the previous frame so you could draw the next one.",
+      "pip_correct": "Exactly! Onion skinning lets you see your past and future frames so your motion stays smooth.",
+      "pip_wrong": "Not quite. Onion skinning is about seeing other frames transparently — it's how animators keep things lined up."
     },
     {
       "id": 3,
-      "question": "What happens when you increase the frames per second? (Increasing FPS means playing more frames within each second)",
+      "question": "What happens when you increase the frames per second? (Increasing FPS means playing more frames within each second.)",
       "options": [
         "the animation speeds up",
         "the animation slows down"
       ],
-      "correct_index": 0
+      "correct_index": 0,
+      "pip_intro": "Let's talk about timing. FPS is a really important word in animation!",
+      "pip_hint": "If you're playing more pictures in the same amount of time, what does that do to how fast things look?",
+      "pip_correct": "Yes! More frames per second means the action zooms by faster.",
+      "pip_wrong": "Other way around — more frames per second means the animation actually plays faster, not slower."
     },
     {
       "id": 4,
@@ -35,7 +47,37 @@
         "At least 5 frames",
         "Exactly 100 frames"
       ],
-      "correct_index": 1
+      "correct_index": 1,
+      "pip_intro": "Quick fundamentals check!",
+      "pip_hint": "Motion needs at least a 'before' and an 'after' — but more usually looks even smoother.",
+      "pip_correct": "Great instincts! Two frames is the bare minimum for motion, though more frames make it look smoother.",
+      "pip_wrong": "Almost! You only need at least 2 frames to show motion — anything less is just a still picture."
+    },
+    {
+      "id": 5,
+      "question": "Drag these production steps into the order a real animation studio follows to make a movie — from the very first idea to the finished film.",
+      "type": "drag_order",
+      "items": [
+        "📝  Write the script and develop the story",
+        "📋  Sketch out each scene as a storyboard",
+        "🎙️  Record the voice actors saying their lines",
+        "✏️  Draw and animate the keyframes and in-between frames",
+        "🌈  Add color, lighting, music, and final effects"
+      ],
+      "pip_intro": "This one's tricky! Real studios follow a specific order to make a film. Can you guess the workflow?",
+      "pip_hint": "Two big clues: animators need to know what the characters say BEFORE they can lip-sync, and you can't color something that hasn't been drawn yet.",
+      "pip_correct": "Wow, you nailed the real animation pipeline! Studios like Pixar and Disney follow this exact order. Voice acting comes before animation so animators can match the mouth movements to the recorded dialogue.",
+      "pip_wrong": "Tricky one! In real studios: story first, then storyboard, THEN voice acting (so animators can lip-sync to it), then the actual animation, and finally color and effects. Voice before animation surprises a lot of people!"
+    },
+    {
+      "id": 6,
+      "question": "True or false: It takes 24 drawings to make just 1 second of traditional film animation.",
+      "type": "true_false",
+      "correct_answer": true,
+      "pip_intro": "Last one — fun trivia time! True or false?",
+      "pip_hint": "Remember when we talked about FPS? Movies usually run at 24 frames per second. So how many drawings do you need for one second?",
+      "pip_correct": "True! Traditional film animation runs at 24 frames per second, so a single minute of animation can be over 1,400 hand-drawn pictures. That's why old Disney movies took years to make!",
+      "pip_wrong": "Actually true! Film runs at 24 frames per second, so for every single second on screen, animators had to hand-draw 24 separate pictures. No wonder it took years."
     }
   ]
 }

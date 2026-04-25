@@ -121,6 +121,35 @@
             min-height: 120px;
         }
 
+        /* Quiz button slot inside the mission panel */
+        .mission-quiz-slot {
+            display: none;
+            margin-top: 0.5rem;
+            padding-top: 1rem;
+            border-top: 1px dashed #c8e6c9;
+            flex-direction: column;
+            gap: 0.5rem;
+            align-items: stretch;
+        }
+        .mission-quiz-slot.visible { display: flex; }
+        .mission-quiz-slot .mission-quiz-label {
+            font-size: 13px;
+            color: #00942f;
+            font-weight: bold;
+            text-align: center;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+        .mission-quiz-slot .quiz-link-btn {
+            width: 100%;
+            text-align: center;
+            box-shadow: 0 4px 12px rgba(0,148,47,0.35);
+        }
+        .mission-quiz-slot .quiz-link-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 16px rgba(0,148,47,0.45);
+        }
+
         .workspace-stage {
             width: 100%;
             max-width: 800px;
@@ -189,16 +218,17 @@
             <aside class="mission-panel">
                 <h2 class="mission-name" id="mission-name">Mission</h2>
                 <div class="mission-text" id="mission-text"></div>
+
+                <div class="mission-quiz-slot" id="mission-quiz-slot">
+                    <span class="mission-quiz-label">Ready?</span>
+                    <button class="quiz-link-btn" id="quiz-btn">Take the Quiz &rarr;</button>
+                </div>
             </aside>
 
         </div>
 
         <div class="hint-row">
             <div class="pip-hint" id="pip-hint"></div>
-        </div>
-
-        <div class="learn-actions">
-            <button class="quiz-link-btn" id="quiz-btn">Take the Quiz &rarr;</button>
         </div>
     </main>
 
@@ -235,7 +265,7 @@
             const missionName = document.getElementById('mission-name');
             const pipNextBtn = document.getElementById('pip-next-btn');
             const pipPrevBtn = document.getElementById('pip-prev-btn');
-            const learnActions = document.querySelector('.learn-actions');
+            const missionQuizSlot = document.getElementById('mission-quiz-slot');
 
             const dialogues = [
                 "Hi, I’m Pip! I’ll be your guide as you create your first animation.",
@@ -294,7 +324,7 @@
                     updatePip();
                 }
                 if (step === dialogues.length - 1) {
-                    learnActions.style.display = 'flex';
+                    missionQuizSlot.classList.add('visible');
                     pipNextBtn.style.display = 'none';
                 }
                 pipPrevBtn.style.display = step > 0 ? 'inline-block' : 'none';
@@ -305,7 +335,7 @@
                     step--;
                     updatePip();
                     pipNextBtn.style.display = 'inline-block';
-                    learnActions.style.display = 'none';
+                    missionQuizSlot.classList.remove('visible');
                 }
                 pipPrevBtn.style.display = step > 0 ? 'inline-block' : 'none';
             });
@@ -339,14 +369,22 @@
             }
 
             document.getElementById('quiz-btn').addEventListener('click', function() {
+                const frames = api.getFrames();
+                console.log('[learn] sending', frames.length, 'frames to /save_frames');
                 fetch('/save_frames', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ frames: api.getFrames() })
+                    body: JSON.stringify({ frames: frames })
                 }).then(r => r.json()).then(data => {
-                    if (data.ok) {
+                    if (data && data.ok) {
+                        window.location.href = '/quiz/1';
+                    } else {
+                        console.error('[learn] /save_frames failed', data);
                         window.location.href = '/quiz/1';
                     }
+                }).catch(function (err) {
+                    console.error('[learn] /save_frames error', err);
+                    window.location.href = '/quiz/1';
                 });
             });
         });

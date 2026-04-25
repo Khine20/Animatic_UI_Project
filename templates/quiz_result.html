@@ -3,43 +3,229 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate, max-age=0">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
     <title>Animator Quiz — Results</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='homepage.css') }}">
     <style>
-        body {
-            background-color: #101010;
+        /* Override homepage.css which sets body { display:flex; height:100%; overflow:hidden }
+           — that was clipping the (much taller than viewport) results page. */
+        html, body {
+            background: #005397;
             color: #fff;
             font-family: 'Times New Roman', Times, serif;
+            display: block !important;
+            width: 100%;
+            height: auto !important;
             min-height: 100vh;
+            overflow: auto !important;
+            margin: 0;
+        }
+        .results-page {
+            min-height: 100vh;
+            padding: 3rem 1.5rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+            z-index: 10;
         }
         .result-title {
-            font-family: 'Courier New', Courier, monospace;
-            letter-spacing: 2px;
+            font-family: 'Gill Sans', 'Gill Sans MT', Calibri, sans-serif;
+            letter-spacing: 4px;
+            margin-bottom: 1.5rem;
         }
-        .score-card {
-            background-color: #1b1b1b;
-            border: 1px solid #2a2a2a;
+        .results-layout {
+            display: flex;
+            flex-direction: row;
+            gap: 2rem;
+            width: 100%;
+            max-width: 1100px;
+            justify-content: center;
+            align-items: flex-start;
+        }
+        .pip-panel {
+            background: #fff;
+            border: 2px solid #00942f;
             border-radius: 8px;
+            padding: 1.75rem;
+            width: 300px;
+            min-width: 260px;
+            color: #000;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.25);
+        }
+        .pip-name {
+            font-size: 20px;
+            font-weight: bold;
+            color: #00942f;
+            margin: 0;
+        }
+        .pip-dialogue {
+            font-size: 16px;
+            line-height: 1.5;
+        }
+        .results-main {
+            flex: 1;
+            min-width: 340px;
+            max-width: 720px;
+        }
+        .score-hero {
+            width: 100%;
+            max-width: 1100px;
+            background: linear-gradient(135deg, rgba(0,0,0,0.92) 0%, rgba(20,77,34,0.92) 100%);
+            border: 2px solid #00942f;
+            border-radius: 12px;
+            padding: 2.25rem 2rem;
+            margin-bottom: 1.5rem;
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            justify-content: space-around;
+            gap: 2rem;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.45);
+            text-align: center;
+        }
+        .score-block { display: flex; flex-direction: column; align-items: center; }
+        .score-label {
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 12px;
+            letter-spacing: 3px;
+            color: #b6f7c4;
+            margin-bottom: 6px;
+            text-transform: uppercase;
         }
         .score-big {
             font-family: 'Courier New', Courier, monospace;
-            font-size: 72px;
+            font-size: 84px;
             line-height: 1;
-            color: #00942f;
+            color: #00ff5e;
+            text-shadow: 0 2px 12px rgba(0,255,94,0.35);
+            font-weight: bold;
         }
-        .q-card {
-            background-color: #1b1b1b;
+        .score-big .score-total {
+            font-size: 38px;
+            color: #b6f7c4;
+            opacity: 0.7;
+        }
+        .score-percent {
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 64px;
+            line-height: 1;
+            color: #fff;
+            font-weight: bold;
+        }
+        .score-message {
+            font-family: 'Gill Sans', 'Gill Sans MT', Calibri, sans-serif;
+            font-size: 22px;
+            line-height: 1.3;
+            color: #fff;
+            max-width: 320px;
+        }
+        .score-bar-wrap {
+            width: 100%;
+            max-width: 1100px;
+            margin-bottom: 1.5rem;
+            height: 14px;
+            background: rgba(0,0,0,0.4);
+            border-radius: 7px;
+            overflow: hidden;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+        .score-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #00942f 0%, #00ff5e 100%);
+            transition: width 1s ease-out;
+            box-shadow: 0 0 12px rgba(0,255,94,0.5);
+        }
+        @media (max-width: 720px) {
+            .score-hero { flex-direction: column; gap: 1.25rem; }
+        }
+        .sticky-score {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: rgba(0, 30, 10, 0.96);
+            border-bottom: 2px solid #00942f;
+            padding: 10px 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 18px;
+            z-index: 100;
+            box-shadow: 0 4px 14px rgba(0,0,0,0.45);
+            transform: translateY(-100%);
+            transition: transform 0.25s ease-out;
+            font-family: 'Courier New', Courier, monospace;
+        }
+        .sticky-score.visible { transform: translateY(0); }
+        .sticky-score .label {
+            color: #b6f7c4;
+            font-size: 12px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+        .sticky-score .value {
+            color: #00ff5e;
+            font-size: 22px;
+            font-weight: bold;
+        }
+        .sticky-score .mini-bar {
+            width: 160px;
+            height: 8px;
+            background: rgba(255,255,255,0.15);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        .sticky-score .mini-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #00942f 0%, #00ff5e 100%);
+        }
+        .animation-preview {
+            background-color: rgba(0,0,0,0.85);
             border: 1px solid #2a2a2a;
             border-radius: 8px;
+            padding: 1.25rem;
+            margin-bottom: 1rem;
+            text-align: center;
+        }
+        .animation-preview-label {
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 12px;
+            letter-spacing: 2px;
+            color: #b6f7c4;
+            text-transform: uppercase;
+            margin-bottom: 12px;
+        }
+        .animation-preview-img {
+            max-width: 100%;
+            max-height: 280px;
+            border-radius: 4px;
+            margin-bottom: 12px;
+            display: inline-block;
+            background: #fff;
+        }
+        .q-card {
+            background-color: rgba(0,0,0,0.85);
+            border: 1px solid #2a2a2a;
+            border-radius: 8px;
+            padding: 1.25rem;
+            margin-bottom: 0.75rem;
         }
         .q-card.correct { border-left: 6px solid #00942f; }
         .q-card.incorrect { border-left: 6px solid #b22222; }
         .q-card.skipped { border-left: 6px solid #888; }
         .option-row {
-            padding: 10px 14px;
+            padding: 8px 12px;
             border-radius: 4px;
-            margin-bottom: 6px;
+            margin-bottom: 4px;
             background-color: #202020;
+            font-size: 15px;
         }
         .option-row.your-correct { background-color: #144d22; }
         .option-row.your-wrong { background-color: #4d1414; }
@@ -47,117 +233,246 @@
         .badge-correct { background-color: #00942f; }
         .badge-incorrect { background-color: #b22222; }
         .badge-skipped { background-color: #666; }
+        .hint-tag {
+            display: inline-block;
+            margin-left: 8px;
+            font-size: 12px;
+            background: #b8860b;
+            color: #fff;
+            padding: 2px 8px;
+            border-radius: 3px;
+        }
         .cta-btn {
             background-color: #00942f;
             color: #fff;
             border: none;
             padding: 10px 22px;
-            font-size: 16px;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 15px;
+            letter-spacing: 1px;
+            border-radius: 4px;
         }
         .cta-btn:hover { background-color: #007424; color: #fff; }
+        .btn-back {
+            color: #fff;
+            border: 1px solid #fff;
+            background: transparent;
+            padding: 10px 22px;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 15px;
+            border-radius: 4px;
+        }
+        .btn-back:hover {
+            background: rgba(255,255,255,0.1);
+            color: #fff;
+        }
+        @media (max-width: 860px) {
+            .results-layout { flex-direction: column; align-items: center; }
+            .pip-panel { width: 100%; max-width: 720px; }
+            .results-main { width: 100%; }
+        }
     </style>
 </head>
 <body>
-    <main class="container py-5" style="max-width: 820px;">
-        <h1 class="result-title text-center mb-4">QUIZ RESULTS</h1>
+    <div class="canvas">
+        <div class="pixelCon"></div>
+    </div>
 
-        {% if animation_gif %}
-            <div class="text-center mb-4">
-                <div style="background-color: #1b1b1b; border: 1px solid #2a2a2a; border-radius: 8px; padding: 20px; display: inline-block;">
-                    <p class="mb-3" style="font-size: 14px; color: #999;">Your Animation</p>
-                    <img src="{{ animation_gif }}" alt="Your animation" style="max-width: 100%; max-height: 300px; border-radius: 4px; margin-bottom: 12px;">
-                    <br>
-                    <button type="button" id="download-gif-btn" class="cta-btn" onclick="downloadGif()">Download GIF</button>
+    <div id="sticky-score" class="sticky-score">
+        <span class="label">Score</span>
+        <span class="value">{{ score }} / {{ total }}</span>
+        <div class="mini-bar"><div class="mini-bar-fill" id="sticky-bar-fill"></div></div>
+        <span class="value" id="sticky-percent"></span>
+    </div>
+
+    <main class="results-page">
+        <h1 class="result-title">QUIZ RESULTS</h1>
+
+        {% set percent = (score * 100 // total) if total else 0 %}
+
+        <section class="score-hero">
+            <div class="score-block">
+                <div class="score-label">Your Score</div>
+                <div class="score-big">{{ score }}<span class="score-total"> / {{ total }}</span></div>
+            </div>
+            <div class="score-block">
+                <div class="score-label">Percentage</div>
+                <div class="score-percent">{{ percent }}%</div>
+            </div>
+            <div class="score-block">
+                <div class="score-label">PIP says</div>
+                <div class="score-message">
+                    {% if score == total %}
+                        Perfect! You're a natural.
+                    {% elif percent >= 75 %}
+                        Great job — almost flawless!
+                    {% elif percent >= 50 %}
+                        Solid effort. Keep practicing!
+                    {% elif score > 0 %}
+                        A start! Try again to improve.
+                    {% else %}
+                        Don't worry — let's try again together.
+                    {% endif %}
                 </div>
             </div>
-            <script>
-                function downloadGif() {
-                    const gifDataUrl = "{{ animation_gif }}";
-                    const link = document.createElement("a");
-                    link.href = gifDataUrl;
-                    link.download = "my-animation.gif";
-                    document.body.appendChild(link);
-                    link.click();
-                    document.body.removeChild(link);
-                }
-            </script>
-        {% endif %}
+        </section>
 
-        <div class="score-card p-4 p-md-5 text-center mb-4">
-            <div class="score-big">{{ score }} / {{ total }}</div>
-            <p class="mt-3 mb-0">
-                {% if score == total %}
-                    Perfect score — you nailed it.
-                {% elif score >= (total // 2) + 1 %}
-                    Nice work. You're getting the hang of animation basics.
-                {% else %}
-                    Keep practicing — review the lessons and try again.
-                {% endif %}
-            </p>
+        <div class="score-bar-wrap" aria-label="score progress">
+            <div class="score-bar-fill" style="width: {{ percent }}%;"></div>
         </div>
 
-        <h2 class="h5 mb-3">Answer breakdown</h2>
-
-        {% for r in results %}
-            <div class="q-card p-3 p-md-4 mb-3
-                {% if r.user_answer is none and r.selected_index is none %}skipped
-                {% elif r.is_correct %}correct
-                {% else %}incorrect{% endif %}">
-                <div class="d-flex justify-content-between align-items-start mb-2">
-                    <strong>Q{{ loop.index }}. {{ r.question }}</strong>
-                    {% if r.user_answer is none and r.selected_index is none %}
-                        <span class="badge badge-skipped">Skipped</span>
-                    {% elif r.is_correct %}
-                        <span class="badge badge-correct">Correct</span>
+        <div class="results-layout">
+            <!-- PIP final commentary -->
+            <aside class="pip-panel">
+                <h2 class="pip-name">PIP says:</h2>
+                <div class="pip-dialogue">
+                    {% if score == total %}
+                        Wow — a perfect score! You're a natural animator. I knew you had it in you.
+                    {% elif score >= (total // 2) + 1 %}
+                        Nice work! You're getting the hang of animation basics. Keep practicing and you'll master it.
+                    {% elif score > 0 %}
+                        Don't worry — animation takes practice. Try the lesson again and you'll see those scores climb.
                     {% else %}
-                        <span class="badge badge-incorrect">Incorrect</span>
+                        Hey, everyone starts somewhere! Let's go back to the lesson and try again together.
                     {% endif %}
                 </div>
+            </aside>
 
-                {% if r.user_answer is defined %}
-                    <div class="option-row {% if r.is_correct %}your-correct{% else %}your-wrong{% endif %}">
-                        Your answer: {{ r.user_answer }}
+            <div class="results-main">
+                {% if animation_gif %}
+                    <div class="animation-preview">
+                        <p class="animation-preview-label">Your Animation</p>
+                        <img src="{{ animation_gif }}" alt="Your animation" class="animation-preview-img">
+                        <button type="button" id="download-gif-btn" class="cta-btn" onclick="downloadGif()">Download GIF</button>
                     </div>
-                    {% if not r.is_correct %}
-                        <div class="option-row actual-correct">
-                            Correct answer: {{ r.correct_answer }}
-                        </div>
-                    {% endif %}
-                {% else %}
-                    {% for option in r.options %}
-                        {% set is_user = (r.selected_index == loop.index0) %}
-                        {% set is_answer = (r.correct_index == loop.index0) %}
-                        <div class="option-row
-                            {% if is_user and r.is_correct %}your-correct{% endif %}
-                            {% if is_user and not r.is_correct %}your-wrong{% endif %}
-                            {% if is_answer %}actual-correct{% endif %}">
-                            {{ ['A','B','C','D','E','F'][loop.index0] }}. {{ option }}
-                            {% if is_user %}<span class="text-white-50"> — your answer</span>{% endif %}
-                            {% if is_answer and not is_user %}<span class="text-white-50"> — correct answer</span>{% endif %}
-                        </div>
-                    {% endfor %}
+                    <script>
+                        function downloadGif() {
+                            const gifDataUrl = "{{ animation_gif }}";
+                            const link = document.createElement("a");
+                            link.href = gifDataUrl;
+                            link.download = "my-animation.gif";
+                            document.body.appendChild(link);
+                            link.click();
+                            document.body.removeChild(link);
+                        }
+                    </script>
                 {% endif %}
-            </div>
-        {% endfor %}
 
-        <div class="d-flex justify-content-center gap-3 mt-4">
-            <a href="/" class="btn cta-btn">Back to Home</a>
-            <button id="retry-btn" class="btn btn-outline-light">Retake Quiz</button>
+                <h2 class="h5 mb-3">Answer breakdown</h2>
+
+                {% for r in results %}
+                    <div class="q-card
+                        {% if not r.answered %}skipped
+                        {% elif r.is_correct %}correct
+                        {% else %}incorrect{% endif %}">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <strong>Q{{ loop.index }}. {{ r.question }}</strong>
+                            <span>
+                                {% if r.hint_used %}<span class="hint-tag">Hint</span>{% endif %}
+                                {% if not r.answered %}
+                                    <span class="badge badge-skipped">Skipped</span>
+                                {% elif r.is_correct %}
+                                    <span class="badge badge-correct">Correct</span>
+                                {% else %}
+                                    <span class="badge badge-incorrect">Incorrect</span>
+                                {% endif %}
+                            </span>
+                        </div>
+
+                        {% if r.type == 'input' %}
+                            <div class="option-row {% if r.is_correct %}your-correct{% else %}your-wrong{% endif %}">
+                                Your answer: {{ r.user_answer if r.user_answer is not none else '(no answer)' }}
+                            </div>
+                            {% if not r.is_correct %}
+                                <div class="option-row actual-correct">
+                                    Correct answer: {{ r.correct_answer }}
+                                </div>
+                            {% endif %}
+
+                        {% elif r.type == 'drag_order' %}
+                            <div class="text-white-50" style="font-size:13px; margin:6px 0 4px;">Your order:</div>
+                            {% if r.user_order %}
+                                {% for orig_idx in r.user_order %}
+                                    {% set is_in_place = (loop.index0 == orig_idx) %}
+                                    <div class="option-row {% if is_in_place %}your-correct{% else %}your-wrong{% endif %}">
+                                        {{ loop.index }}. {{ r["items"][orig_idx] }}
+                                    </div>
+                                {% endfor %}
+                            {% else %}
+                                <div class="option-row your-wrong">(no answer)</div>
+                            {% endif %}
+                            {% if not r.is_correct %}
+                                <div class="text-white-50" style="font-size:13px; margin:10px 0 4px;">Correct order:</div>
+                                {% for item in r["items"] %}
+                                    <div class="option-row actual-correct">{{ loop.index }}. {{ item }}</div>
+                                {% endfor %}
+                            {% endif %}
+
+                        {% elif r.type == 'true_false' %}
+                            <div class="option-row {% if r.is_correct %}your-correct{% else %}your-wrong{% endif %}">
+                                Your answer: {{ 'TRUE' if r.user_value else ('FALSE' if r.user_value is not none else '(no answer)') }}
+                            </div>
+                            {% if not r.is_correct %}
+                                <div class="option-row actual-correct">
+                                    Correct answer: {{ 'TRUE' if r.correct_value else 'FALSE' }}
+                                </div>
+                            {% endif %}
+
+                        {% else %}
+                            {% for option in r.options %}
+                                {% set is_user = (r.selected_index == loop.index0) %}
+                                {% set is_answer = (r.correct_index == loop.index0) %}
+                                <div class="option-row
+                                    {% if is_user and r.is_correct %}your-correct{% endif %}
+                                    {% if is_user and not r.is_correct %}your-wrong{% endif %}
+                                    {% if is_answer %}actual-correct{% endif %}">
+                                    {{ ['A','B','C','D','E','F'][loop.index0] }}. {{ option }}
+                                    {% if is_user %}<span class="text-white-50"> — your answer</span>{% endif %}
+                                    {% if is_answer and not is_user %}<span class="text-white-50"> — correct answer</span>{% endif %}
+                                </div>
+                            {% endfor %}
+                        {% endif %}
+                    </div>
+                {% endfor %}
+
+                <div class="d-flex justify-content-center gap-3 mt-4">
+                    <a href="/" class="btn cta-btn">Back to Home</a>
+                    <button id="retry-btn" class="btn-back">Retake Quiz</button>
+                </div>
+            </div>
         </div>
     </main>
 
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script>
         $(function () {
+            window.scrollTo(0, 0);
+
+            var percent = {{ percent }};
+            $('#sticky-bar-fill').css('width', percent + '%');
+            $('#sticky-percent').text(percent + '%');
+
+            var $sticky = $('#sticky-score');
+            var heroBottom = function () {
+                var hero = document.querySelector('.score-hero');
+                if (!hero) return 0;
+                return hero.getBoundingClientRect().bottom + window.scrollY;
+            };
+            $(window).on('scroll', function () {
+                if (window.scrollY > heroBottom() - 20) {
+                    $sticky.addClass('visible');
+                } else {
+                    $sticky.removeClass('visible');
+                }
+            });
+
             $('#retry-btn').on('click', function () {
-                $.ajax({
-                    url: '/reset',
-                    method: 'POST'
-                }).always(function () {
+                $.ajax({ url: '/reset', method: 'POST' }).always(function () {
                     window.location.href = '/quiz/1';
                 });
             });
         });
     </script>
+    <script src="{{ url_for('static', filename='background.js') }}"></script>
 </body>
 </html>
