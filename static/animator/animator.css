@@ -66,6 +66,30 @@
     height: 100%;
 }
 
+.animator-tools-main,
+.animator-tools-onion,
+.animator-tools-utility {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.animator-tools-onion {
+    padding-top: 6px;
+    padding-bottom: 6px;
+    border-top: 2px solid var(--border-mid);
+}
+
+.animator-tools-utility {
+    margin-top: auto;
+    padding-top: 6px;
+    border-top: 2px solid var(--border-mid);
+}
+
+.animator-btn-clear {
+    letter-spacing: 0.5px;
+}
+
 .animator-btn-del {
     background: #e74c3c !important;
     color: #fff !important;
@@ -73,7 +97,6 @@
     border-left: 2px solid #ffb3b3 !important;
     border-right: 2px solid #a93226 !important;
     border-bottom: 2px solid #a93226 !important;
-    margin-top: auto;
     font-weight: bold;
     letter-spacing: 1px;
     transition: opacity 0.2s;
@@ -258,6 +281,13 @@
     margin-left: 2px;
     font-size: 1.5rem;
     font-weight: bold;
+    background: var(--window-gray);
+    border-top: 2px solid var(--border-light);
+    border-left: 2px solid var(--border-light);
+    border-right: 2px solid var(--border-dark);
+    border-bottom: 2px solid var(--border-dark);
+    box-shadow: inset 1px 1px 0 #fff, inset -1px -1px 0 var(--border-mid);
+    cursor: pointer;
 }
 
 .animator-thumb img {
@@ -318,6 +348,31 @@
     .animator-tools {
         width: 100%;
         flex-direction: row;
+        align-items: stretch;
+        justify-content: space-between;
+    }
+
+    .animator-tools-main,
+    .animator-tools-onion,
+    .animator-tools-utility {
+        flex-direction: row;
+        margin-top: 0;
+        padding-top: 0;
+        padding-bottom: 0;
+        border-top: 0;
+        border-bottom: 0;
+    }
+
+    .animator-tools-main {
+        flex: 1;
+    }
+
+    .animator-tools-onion {
+        flex-shrink: 0;
+    }
+
+    .animator-tools-utility {
+        flex-shrink: 0;
     }
 
     .animator-tools .animator-btn {

@@ -129,6 +129,14 @@
             dragSourceIndex: null
         };
 
+        function notifyChange() {
+            if (typeof settings.onChange === "function") {
+                settings.onChange(state.frames.slice(), {
+                    currentFrame: state.currentFrame
+                });
+            }
+        }
+
         function initCanvases() {
             [mainCanvas, onionCanvas].forEach((canvas) => {
                 canvas.width = settings.width;
@@ -156,6 +164,7 @@
         function saveFrame() {
             state.frames[state.currentFrame] = mainCanvas.toDataURL();
             updateTimeline();
+            notifyChange();
         }
 
         function startDrawing(event) {
@@ -226,6 +235,7 @@
             state.frames.push(mainCanvas.toDataURL());
             loadFrame(state.currentFrame);
             scrollToActive();
+            notifyChange();
         }
 
         function loadFrame(index) {
@@ -363,6 +373,7 @@
                     }
 
                     loadFrame(state.currentFrame);
+                    notifyChange();
                 });
 
                 timeline.appendChild(button);
@@ -460,6 +471,7 @@
                             state.currentFrame = state.frames.length - 1;
                         }
                         loadFrame(state.currentFrame);
+                        notifyChange();
                     });
             }
         }
@@ -622,6 +634,60 @@
             root.addEventListener("click", handleActionClick);
         }
 
+        function exportGif(options) {
+            const exportOptions = Object.assign(
+                {
+                    fileName: "animatic.gif",
+                    durationMs: Math.max(20, Math.round(1000 / settings.fps)),
+                    download: true
+                },
+                options || {}
+            );
+
+            if (!state.isDrawing) {
+                saveFrame();
+            }
+
+            return fetch("/export_gif", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    frames: state.frames.slice(),
+                    duration_ms: exportOptions.durationMs,
+                    file_name: exportOptions.fileName
+                })
+            }).then(function (response) {
+                if (!response.ok) {
+                    return response.json().catch(function () {
+                        return { error: "Failed to export GIF." };
+                    }).then(function (payload) {
+                        throw new Error(payload.error || "Failed to export GIF.");
+                    });
+                }
+
+                return response.blob();
+            }).then(function (blob) {
+                if (exportOptions.download === false) {
+                    return blob;
+                }
+
+                const objectUrl = URL.createObjectURL(blob);
+                const link = document.createElement("a");
+                link.href = objectUrl;
+                link.download = exportOptions.fileName;
+                document.body.appendChild(link);
+                link.click();
+                link.remove();
+                setTimeout(function () {
+                    URL.revokeObjectURL(objectUrl);
+                }, 0);
+
+                return blob;
+            });
+        }
+
         function destroy() {
             clearInterval(state.playInterval);
             root.__animaticMounted = false;
@@ -649,6 +715,7 @@
             },
             setTool: setTool,
             clear: clearCanvas,
+            exportGif: exportGif,
             destroy: destroy
         };
 

@@ -11,12 +11,17 @@
 
         <div class="animator-workspace">
             <aside class="animator-tools" aria-label="Drawing tools">
-                <button type="button" class="animator-btn is-active" data-action="set-tool" data-tool="pen" data-tooltip="Pencil: draw on the current frame.">🖊️</button>
-                <button type="button" class="animator-btn" data-action="set-tool" data-tool="eraser" data-tooltip="Eraser: remove parts of your drawing.">🧹</button>
-                <button type="button" class="animator-btn" data-action="clear" data-tooltip="Clear: erase everything on this frame.">CLR</button>
-                <button type="button" class="animator-btn" data-action="toggle-onion" data-tooltip="Onion Skin: preview nearby frames as ghosts.">🧅</button>
-                <div style="flex:1"></div>
-                <button type="button" class="animator-btn animator-btn-del" data-action="delete-frame" data-tooltip="Delete this frame (disabled if only 1 frame)">DEL</button>
+                <div class="animator-tools-main">
+                    <button type="button" class="animator-btn is-active" data-action="set-tool" data-tool="pen" data-tooltip="Pencil: draw on the current frame.">🖊️</button>
+                    <button type="button" class="animator-btn" data-action="set-tool" data-tool="eraser" data-tooltip="Eraser: remove parts of your drawing.">🧹</button>
+                </div>
+                <div class="animator-tools-onion" aria-label="Effects">
+                    <button type="button" class="animator-btn" data-action="toggle-onion" data-tooltip="Onion Skin: preview nearby frames as ghosts.">🧅</button>
+                </div>
+                <div class="animator-tools-utility" aria-label="Canvas actions">
+                    <button type="button" class="animator-btn animator-btn-clear" data-action="clear" data-tooltip="Clear: erase everything on this frame.">CLR</button>
+                    <button type="button" class="animator-btn animator-btn-del" data-action="delete-frame" data-tooltip="Delete this frame (disabled if only 1 frame)">DEL</button>
+                </div>
             </aside>
 
             <div class="animator-canvas-stage">

@@ -1,9 +1,15 @@
 import json
 import os
+import base64
 from datetime import datetime
-from flask import Flask, render_template, request, redirect, url_for, jsonify
+from io import BytesIO
+from flask import Flask, render_template, request, redirect, url_for, jsonify, send_file
+from PIL import Image
 
 app = Flask(__name__)
+
+# In-memory canvas frame store — cleared on server restart (no persistent save)
+canvas_frames = []
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DATA_PATH = os.path.join(BASE_DIR, 'data.json')
@@ -41,22 +47,97 @@ def log_visit(page):
     save_user_data(user_data)
 
 
+def decode_frame_image(frame_data_url):
+    if not isinstance(frame_data_url, str) or "," not in frame_data_url:
+        raise ValueError("frame must be a data URL string")
+
+    _, encoded = frame_data_url.split(",", 1)
+    image_bytes = base64.b64decode(encoded)
+    image = Image.open(BytesIO(image_bytes))
+    image.load()
+    return image.copy().convert("RGBA")
+
+
+def compile_gif(frames, duration_ms=100):
+    if not isinstance(frames, list) or not frames:
+        raise ValueError("frames must be a non-empty list")
+
+    rgba_images = [decode_frame_image(frame) for frame in frames]
+    
+    # Composite each RGBA image onto a white background
+    if rgba_images:
+        width, height = rgba_images[0].size
+        composited_images = []
+        for rgba in rgba_images:
+            white_bg = Image.new("RGB", (width, height), (255, 255, 255))
+            white_bg.paste(rgba, (0, 0), rgba)
+            composited_images.append(white_bg)
+        
+        first_image, remaining_images = composited_images[0], composited_images[1:]
+    else:
+        return BytesIO()
+
+    output = BytesIO()
+    first_image.save(
+        output,
+        format="GIF",
+        save_all=True,
+        append_images=remaining_images,
+        duration=max(20, int(duration_ms)),
+        loop=0,
+        disposal=2
+    )
+    output.seek(0)
+    return output
+
+
 @app.route('/')
 def home():
     log_visit('home')
     return render_template('homepage.html')
 
 
-@app.route('/save_frame_count', methods=['POST'])
-def save_frame_count():
+@app.route('/save_frames', methods=['POST'])
+def save_frames():
+    global canvas_frames
     payload = request.get_json(silent=True) or {}
-    frame_count = payload.get('frame_count')
-    if not isinstance(frame_count, int) or frame_count < 0:
-        return jsonify({"ok": False, "error": "Invalid frame count"}), 400
-    user_data = load_user_data()
-    user_data['frame_count'] = frame_count
-    save_user_data(user_data)
-    return jsonify({"ok": True})
+    frames = payload.get('frames')
+    if not isinstance(frames, list):
+        return jsonify({"ok": False, "error": "frames must be a list"}), 400
+    canvas_frames = frames
+    return jsonify({"ok": True, "saved": len(canvas_frames)})
+
+
+@app.route('/load_frames', methods=['GET'])
+def load_frames():
+    return jsonify({"frames": canvas_frames})
+
+
+@app.route('/export_gif', methods=['POST'])
+def export_gif():
+    payload = request.get_json(silent=True) or {}
+    frames = payload.get('frames')
+    duration_ms = payload.get('duration_ms', 100)
+    file_name = payload.get('file_name', 'animatic.gif')
+
+    if not isinstance(frames, list) or not frames:
+        return jsonify({"ok": False, "error": "frames must be a non-empty list"}), 400
+
+    try:
+        gif_bytes = compile_gif(frames, duration_ms=duration_ms)
+    except Exception as exc:
+        return jsonify({"ok": False, "error": str(exc)}), 400
+
+    safe_name = os.path.basename(file_name) or "animatic.gif"
+    if not safe_name.lower().endswith(".gif"):
+        safe_name += ".gif"
+
+    return send_file(
+        gif_bytes,
+        mimetype="image/gif",
+        as_attachment=True,
+        download_name=safe_name
+    )
 
 
 @app.route('/learn')
@@ -83,7 +164,7 @@ def quiz(question_id):
     question = questions[question_id - 1].copy() 
     user_data = load_user_data()
     if question_id == 1 and question.get('type') == 'input':
-        question['correct_answer'] = user_data.get('frame_count', 0)
+        question['correct_answer'] = len(canvas_frames)
 
     log_visit(f'quiz/{question_id}')
 
@@ -172,12 +253,23 @@ def quiz_result():
             result["selected_index"] = selected_index
         results.append(result)
 
+    # Compile GIF from stored frames
+    gif_data_url = None
+    if canvas_frames:
+        try:
+            gif_bytes = compile_gif(canvas_frames, duration_ms=100)
+            gif_b64 = base64.b64encode(gif_bytes.getvalue()).decode('utf-8')
+            gif_data_url = f"data:image/gif;base64,{gif_b64}"
+        except Exception:
+            pass
+
     log_visit('quiz/result')
     return render_template(
         'quiz_result.html',
         results=results,
         score=score,
-        total=len(questions)
+        total=len(questions),
+        animation_gif=gif_data_url
     )
 
 
