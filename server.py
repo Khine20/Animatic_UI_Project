@@ -173,6 +173,9 @@ def learn_lesson(lesson_id):
     log_visit(f'learn/{lesson_id}')
     return render_template('learn.html', lesson_id=lesson_id)
 
+@app.route('/quiz')
+def quiz_start():
+    return redirect(url_for('quiz', question_id=1))
 
 @app.route('/quiz/<int:question_id>')
 def quiz(question_id):

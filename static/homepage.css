@@ -19,6 +19,7 @@ html, body {
     left: 0;
     overflow: hidden;
     z-index: 0;
+    image-rendering: pixelated;
 }
 
 .pixel {

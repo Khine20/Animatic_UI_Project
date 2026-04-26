@@ -7,21 +7,117 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='homepage.css') }}">
     <style>
-        body {
-            background-color: #005397;
+        /* Override homepage.css which sets body { display:flex; height:100%; overflow:hidden }
+           — that was clipping pages taller than the viewport. */
+        html, body {
+            background: #005397;
             color: #fff;
             font-family: 'Times New Roman', Times, serif;
+            display: block !important;
+            width: 100%;
+            height: auto !important;
             min-height: 100vh;
+            overflow: auto !important;
+            margin: 0;
         }
+
+        .quiz-page {
+            min-height: 100vh;
+            padding: 7rem 1.5rem 3rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+            z-index: 10;
+        }
+
+        .quiz-title {
+            font-family: 'Gill Sans', 'Gill Sans MT', Calibri, sans-serif;
+            letter-spacing: 4px;
+            margin-bottom: 1.5rem;
+            text-align: center;
+        }
+
+        .quiz-layout {
+            display: flex;
+            flex-direction: row;
+            gap: 2rem;
+            width: 100%;
+            max-width: 1100px;
+            justify-content: center;
+            align-items: stretch;
+        }
+
+        /* PIP */
+        .pip-panel {
+            background: #fff;
+            border: 2px solid #00942f;
+            border-radius: 8px;
+            padding: 1.75rem;
+            width: 300px;
+            min-width: 260px;
+            color: #000;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            align-self: flex-start;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.25);
+        }
+        .pip-panel.is-correct { background: #eaffea; }
+        .pip-panel.is-wrong   { background: #ffecec; border-color: #b22222; }
+        .pip-panel.is-wrong .pip-name { color: #b22222; }
+        .pip-name {
+            font-size: 20px;
+            font-weight: bold;
+            color: #00942f;
+            margin: 0;
+        }
+        .pip-dialogue {
+            font-size: 16px;
+            line-height: 1.5;
+            min-height: 90px;
+        }
+        .pip-hint-btn {
+            background: #fff;
+            color: #00942f;
+            border: 1.5px solid #00942f;
+            padding: 6px 14px;
+            font-family: inherit;
+            font-size: 14px;
+            cursor: pointer;
+            border-radius: 4px;
+            align-self: flex-start;
+        }
+        .pip-hint-btn:hover { background: #00942f; color: #fff; }
+        .pip-hint-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .pip-hint-text {
+            font-size: 14px;
+            line-height: 1.4;
+            color: #333;
+            background: #f6f6f6;
+            border-left: 3px solid #00942f;
+            padding: 8px 12px;
+            margin-top: 4px;
+            display: none;
+        }
+        .pip-hint-text.visible { display: block; animation: pipFadeIn 0.3s ease; }
+
+        /* Quiz card */
         .quiz-card {
-            background-color: #000000;
+            background-color: rgba(0, 0, 0, 0.85);
             border: 1px solid #2a2a2a;
             border-radius: 8px;
+            flex: 1;
+            min-width: 340px;
+            max-width: 640px;
+            padding: 2rem;
         }
-        .quiz-title {
-            font-family: 'Courier New', Courier, monospace;
-            letter-spacing: 2px;
-        }
+        .quiz-meta { display:flex; justify-content:space-between; font-size:14px; margin-bottom:8px; }
+        .progress { height: 6px; background-color:#2a2a2a; border-radius:3px; overflow:hidden; }
+        .progress-bar { background-color:#00942f; transition:width 0.3s ease; }
+        .question-text { font-size:20px; margin: 1.5rem 0 1.25rem; line-height:1.4; }
+
+        /* Multiple choice */
         .option-btn {
             text-align: left;
             padding: 14px 18px;
@@ -29,110 +125,343 @@
             background-color: #202020;
             color: #fff;
             border-radius: 6px;
-            transition: background-color 0.15s, border-color 0.15s;
+            transition: transform 0.15s ease, background-color 0.15s, border-color 0.15s;
             width: 100%;
-            font-size: 18px;
+            font-size: 17px;
+            cursor: pointer;
         }
-        .option-btn:hover {
+        .option-btn:hover:not(:disabled) {
             background-color: #2b2b2b;
             border-color: #00942f;
+            transform: translateX(4px);
         }
-        .option-btn.selected {
-            background-color: #00942f;
-            border-color: #00942f;
+        .option-btn.selected { background-color:#00942f; border-color:#00942f; }
+        .option-btn.reveal-correct { background-color:#144d22; border-color:#00942f; }
+        .option-btn.reveal-correct::after { content:" ✓"; float:right; font-weight:bold; }
+        .option-btn.reveal-wrong { background-color:#4d1414; border-color:#b22222; animation:pipShake 0.35s ease; }
+        .option-btn.reveal-wrong::after { content:" ✗"; float:right; font-weight:bold; }
+        .option-btn:disabled { cursor:default; }
+
+        /* Input */
+        .frame-input {
+            background-color:#202020; border:1px solid #3a3a3a; color:#fff;
+            font-size:18px; padding:12px 14px;
+        }
+        .frame-input:focus {
+            background-color:#202020; color:#fff; border-color:#00942f;
+            box-shadow:0 0 0 0.2rem rgba(0,148,47,0.25);
+        }
+        .frame-input.reveal-correct { border-color:#00942f; box-shadow:0 0 0 0.2rem rgba(0,148,47,0.4); }
+        .frame-input.reveal-wrong   { border-color:#b22222; box-shadow:0 0 0 0.2rem rgba(178,34,34,0.4); animation:pipShake 0.35s ease; }
+        .input-correct-hint { color:#ff8a8a; font-size:14px; margin-top:0.5rem; display:none; }
+        .input-correct-hint.visible { display:block; }
+
+        /* Drag-to-order */
+        .drag-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 0.6rem;
+        }
+        .drag-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: #202020;
+            border: 1px solid #3a3a3a;
+            border-left: 4px solid #00942f;
+            border-radius: 6px;
+            padding: 14px 16px;
+            font-size: 16px;
             color: #fff;
+            cursor: grab;
+            transition: transform 0.15s ease, box-shadow 0.15s ease;
+            user-select: none;
         }
-        .progress {
-            height: 6px;
-            background-color: #2a2a2a;
+        .drag-item:hover { background:#2b2b2b; }
+        .drag-item.sortable-chosen {
+            cursor: grabbing;
+            box-shadow: 0 6px 16px rgba(0,0,0,0.35);
+            transform: scale(1.02);
         }
-        .progress-bar {
-            background-color: #00942f;
+        .drag-item.sortable-ghost { opacity: 0.4; background:#0a3d18; }
+        .drag-handle {
+            font-size: 18px;
+            color: #888;
+            line-height: 1;
         }
-        #next-btn {
-            background-color: #00942f;
-            border: none;
+        .drag-position {
+            min-width: 24px;
+            font-family: 'Courier New', Courier, monospace;
+            color: #00942f;
+            font-weight: bold;
         }
-        #next-btn:disabled {
-            background-color: #444;
+        .drag-label { flex: 1; }
+        .drag-item.reveal-correct { border-color:#00942f; background:#144d22; }
+        .drag-item.reveal-wrong   { border-color:#b22222; background:#4d1414; animation:pipShake 0.35s ease; }
+        .drag-item.locked { cursor: default; }
+
+        /* True/False */
+        .tf-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+        .tf-btn {
+            background: #202020;
+            border: 2px solid #3a3a3a;
+            color: #fff;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 24px;
+            letter-spacing: 4px;
+            padding: 32px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: transform 0.15s ease, background 0.15s, border-color 0.15s;
+        }
+        .tf-btn:hover:not(:disabled) {
+            background: #2b2b2b;
+            transform: translateY(-2px);
+        }
+        .tf-btn[data-value="true"]:hover:not(:disabled)  { border-color: #00942f; }
+        .tf-btn[data-value="false"]:hover:not(:disabled) { border-color: #b22222; }
+        .tf-btn.selected[data-value="true"]  { background:#00942f; border-color:#00942f; }
+        .tf-btn.selected[data-value="false"] { background:#b22222; border-color:#b22222; }
+        .tf-btn.reveal-correct { background:#144d22; border-color:#00942f; }
+        .tf-btn.reveal-wrong   { background:#4d1414; border-color:#b22222; animation:pipShake 0.35s ease; }
+        .tf-btn:disabled { cursor:default; }
+
+        /* Actions */
+        .quiz-actions {
+            display:flex; justify-content:space-between; align-items:center; margin-top:1.5rem;
+        }
+        .btn-primary-pip {
+            background-color:#00942f; color:#fff; border:none;
+            padding:10px 22px; font-family:'Courier New', Courier, monospace;
+            font-size:15px; letter-spacing:1px; border-radius:4px; cursor:pointer;
+        }
+        .btn-primary-pip:hover:not(:disabled) { background-color:#007424; }
+        .btn-primary-pip:disabled { background-color:#444; cursor:not-allowed; }
+        .btn-back {
+            color:#fff; border:1px solid #fff; background:transparent;
+            padding:10px 22px; text-decoration:none; border-radius:4px;
+            font-family:'Courier New', Courier, monospace; font-size:15px;
+        }
+        .btn-back:hover { background:rgba(255,255,255,0.1); color:#fff; }
+
+        @keyframes pipShake {
+            0%,100% { transform: translateX(0); }
+            20% { transform: translateX(-6px); }
+            40% { transform: translateX(6px); }
+            60% { transform: translateX(-4px); }
+            80% { transform: translateX(4px); }
+        }
+        @keyframes pipFadeIn {
+            from { opacity:0; transform: translateY(-4px); }
+            to   { opacity:1; transform: translateY(0); }
+        }
+        .pip-dialogue.changing { animation: pipFadeIn 0.35s ease; }
+
+        @media (max-width: 860px) {
+            .quiz-layout { flex-direction:column; align-items:center; }
+            .pip-panel { width:100%; max-width:640px; }
         }
     </style>
 </head>
 <body>
-    <div class="canvas">
-        <div class="pixelCon"></div>
-    </div>
-    <main class="container py-5" style="max-width: 720px; z-index: 10;">
-        <h1 class="quiz-title text-center mb-4" style="font-family: 'Gill Sans', 'Gill Sans MT', Calibri;">ANIMATOR QUIZ</h1>
-
-        <div class="mb-2 d-flex justify-content-between">
-            <small>Question {{ question_id }} of {{ total }}</small>
-            <a href="/" class="text-white-50">Home</a>
+    <nav class="navbar navbar-expand-lg fixed-top shadow-sm" style="background-color: #005397;">
+        <div class="container">
+            <a class="navbar-brand fw-bold text-white fst-italic" href="/" style="font-family: 'Gill Sans', 'Gill Sans MT', Calibri; font-size: 1.8rem; letter-spacing: 1px;">
+                ANIMATIC
+            </a>
         </div>
-        <div class="progress mb-4" role="progressbar"
-             aria-valuenow="{{ question_id }}" aria-valuemin="0" aria-valuemax="{{ total }}">
-            <div class="progress-bar" style="width: {{ (question_id / total * 100)|round(0) }}%"></div>
-        </div>
+    </nav>
+    <main class="quiz-page">
+        <h1 class="quiz-title">ANIMATIC QUIZ</h1>
 
-        <div class="quiz-card p-4 p-md-5">
-            <h2 class="h4 mb-4">{{ question.question }}</h2>
-
-            {% if question.type == 'input' %}
-                <input type="number" id="frame-input" class="form-control mb-3" placeholder="Enter number of frames" min="1">
-            {% else %}
-                <div id="options" class="d-grid gap-3">
-                    {% for option in question.options %}
-                        <button type="button"
-                                class="option-btn"
-                                data-index="{{ loop.index0 }}">
-                            {{ ['A','B','C','D','E','F'][loop.index0] }}. {{ option }}
-                        </button>
-                    {% endfor %}
+        <div class="quiz-layout">
+            <aside class="pip-panel" id="pip-panel">
+                <h2 class="pip-name" id="pip-name">PIP says:</h2>
+                <div class="pip-dialogue" id="pip-dialogue">
+                    {{ question.pip_intro or 'Time for a question!' }}
                 </div>
-            {% endif %}
-
-            <div class="d-flex justify-content-between align-items-center mt-4">
-                {% if question_id > 1 %}
-                    <a href="/quiz/{{ question_id - 1 }}" class="btn btn-outline-light">Back</a>
-                {% else %}
-                    <span></span>
-                {% endif %}
-                <button id="next-btn" class="btn btn-success" disabled>
-                    {% if question_id < total %}Next{% else %}See Results{% endif %}
+                <button type="button" class="pip-hint-btn" id="pip-hint-btn">
+                    💡 Ask Pip for a hint
                 </button>
-            </div>
+                <div class="pip-hint-text" id="pip-hint-text">
+                    {{ question.pip_hint or '' }}
+                </div>
+            </aside>
+
+            <section class="quiz-card">
+                <div class="quiz-meta">
+                    <span>Question {{ question_id }} of {{ total }}</span>
+                    <a href="/" class="text-white-50">Home</a>
+                </div>
+                <div class="progress" role="progressbar"
+                     aria-valuenow="{{ question_id }}" aria-valuemin="0" aria-valuemax="{{ total }}">
+                    <div class="progress-bar" style="width: {{ (question_id / total * 100)|round(0) }}%"></div>
+                </div>
+
+                <h2 class="question-text">{{ question.question }}</h2>
+
+                {% if question.type == 'input' %}
+                    <input type="number" id="frame-input"
+                           class="form-control frame-input"
+                           placeholder="Enter number of frames" min="1" autocomplete="off">
+                    <div class="input-correct-hint" id="input-correct-hint"></div>
+
+                {% elif question.type == 'drag_order' %}
+                    <p class="text-white-50" style="font-size:14px; margin-bottom:0.75rem;">
+                        Drag the rows to reorder. Top = first.
+                    </p>
+                    <ul class="drag-list" id="drag-list">
+                        {% for item in question["items"] %}
+                            <li class="drag-item" data-original-index="{{ loop.index0 }}">
+                                <span class="drag-handle">⋮⋮</span>
+                                <span class="drag-position">{{ loop.index }}.</span>
+                                <span class="drag-label">{{ item }}</span>
+                            </li>
+                        {% endfor %}
+                    </ul>
+
+                {% elif question.type == 'true_false' %}
+                    <div class="tf-grid">
+                        <button type="button" class="tf-btn" data-value="true">TRUE</button>
+                        <button type="button" class="tf-btn" data-value="false">FALSE</button>
+                    </div>
+
+                {% else %}
+                    <div id="options" class="d-grid gap-3">
+                        {% for option in question.options %}
+                            <button type="button" class="option-btn" data-index="{{ loop.index0 }}">
+                                {{ ['A','B','C','D','E','F'][loop.index0] }}. {{ option }}
+                            </button>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+
+                <div class="quiz-actions">
+                    {% if question_id > 1 %}
+                        <a href="/quiz/{{ question_id - 1 }}" class="btn-back">← Back</a>
+                    {% else %}
+                        <span></span>
+                    {% endif %}
+                    <button id="next-btn" class="btn-primary-pip" disabled>Submit Answer</button>
+                </div>
+            </section>
         </div>
     </main>
 
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
     <script>
         $(function () {
-            var questionId = {{ question_id }};
-            var previousAnswer = {{ previous_answer | tojson if previous_answer is not none else 'null' }};
-            var questionType = '{{ question.type }}';
-            var selectedIndex = null;
-            var inputValue = null;
+            var questionId      = {{ question_id }};
+            var totalQuestions  = {{ total }};
+            var questionType    = '{{ question.type or "multiple_choice" }}';
+            var previousAnswer  = {{ previous_answer | tojson if previous_answer is not none else 'null' }};
 
+            var selectedIndex = null;
+            var inputValue    = null;
+            var tfValue       = null;
+            var dragSortable  = null;
+            var hintUsed      = false;
+            var hasSubmitted  = false;
+            var lastFeedback  = null;
+
+            // ---- PIP dialogue helper ----
+            function pipSay(text, mood) {
+                var $dialogue = $('#pip-dialogue');
+                var $panel    = $('#pip-panel');
+                $panel.removeClass('is-correct is-wrong');
+                if (mood === 'correct') $panel.addClass('is-correct');
+                else if (mood === 'wrong') $panel.addClass('is-wrong');
+                $dialogue.removeClass('changing').text(text);
+                void $dialogue[0].offsetWidth;
+                $dialogue.addClass('changing');
+            }
+
+            $('#pip-hint-btn').on('click', function () {
+                if (hasSubmitted) return;
+                hintUsed = true;
+                $('#pip-hint-text').addClass('visible');
+                $(this).prop('disabled', true).text('💡 Hint revealed');
+            });
+
+            // ---- Per-type wiring ----
             if (questionType === 'input') {
                 if (previousAnswer && typeof previousAnswer.answer === 'string') {
                     inputValue = previousAnswer.answer;
                     $('#frame-input').val(inputValue);
                     $('#next-btn').prop('disabled', false);
                 }
-
                 $('#frame-input').on('input', function () {
+                    if (hasSubmitted) return;
                     inputValue = $(this).val().trim();
                     $('#next-btn').prop('disabled', inputValue === '');
                 });
+
+            } else if (questionType === 'drag_order') {
+                var $list = $('#drag-list');
+
+                // Restore previous order if there is one, otherwise shuffle
+                if (previousAnswer && Array.isArray(previousAnswer.order)) {
+                    var $items = $list.children('.drag-item').detach();
+                    previousAnswer.order.forEach(function (origIdx) {
+                        $items.filter('[data-original-index="' + origIdx + '"]').appendTo($list);
+                    });
+                } else {
+                    var $items = $list.children('.drag-item').get();
+                    for (var i = $items.length - 1; i > 0; i--) {
+                        var j = Math.floor(Math.random() * (i + 1));
+                        $list[0].insertBefore($items[j], $items[i].nextSibling);
+                        var tmp = $items[i]; $items[i] = $items[j]; $items[j] = tmp;
+                    }
+                }
+                refreshDragNumbers();
+
+                dragSortable = Sortable.create($list[0], {
+                    animation: 180,
+                    ghostClass: 'sortable-ghost',
+                    chosenClass: 'sortable-chosen',
+                    handle: '.drag-item',
+                    onEnd: function () { refreshDragNumbers(); }
+                });
+
+                $('#next-btn').prop('disabled', false);
+
+                function refreshDragNumbers() {
+                    $list.children('.drag-item').each(function (i) {
+                        $(this).find('.drag-position').text((i + 1) + '.');
+                    });
+                }
+
+            } else if (questionType === 'true_false') {
+                if (previousAnswer && typeof previousAnswer.value === 'boolean') {
+                    tfValue = previousAnswer.value;
+                    $('.tf-btn[data-value="' + tfValue + '"]').addClass('selected');
+                    $('#next-btn').prop('disabled', false);
+                }
+                $('.tf-btn').on('click', function () {
+                    if (hasSubmitted) return;
+                    $('.tf-btn').removeClass('selected');
+                    $(this).addClass('selected');
+                    tfValue = $(this).data('value') === true || $(this).data('value') === 'true';
+                    $('#next-btn').prop('disabled', false);
+                });
+
             } else {
                 if (previousAnswer && typeof previousAnswer.selected_index === 'number') {
                     selectedIndex = previousAnswer.selected_index;
                     $('.option-btn[data-index="' + selectedIndex + '"]').addClass('selected');
                     $('#next-btn').prop('disabled', false);
                 }
-
                 $('.option-btn').on('click', function () {
+                    if (hasSubmitted) return;
                     $('.option-btn').removeClass('selected');
                     $(this).addClass('selected');
                     selectedIndex = parseInt($(this).data('index'), 10);
@@ -140,24 +469,110 @@
                 });
             }
 
+            // ---- Submit / Continue ----
             $('#next-btn').on('click', function () {
-                if ((questionType === 'input' && inputValue === null) || (questionType !== 'input' && selectedIndex === null)) return;
-                var $btn = $(this).prop('disabled', true).text('Saving...');
+                if (hasSubmitted && lastFeedback) {
+                    window.location.href = lastFeedback.next_url;
+                    return;
+                }
 
-                var data = questionType === 'input' ? { answer: inputValue } : { selected_index: selectedIndex };
+                var payload = { hint_used: hintUsed };
+                if (questionType === 'input') {
+                    if (!inputValue) return;
+                    payload.answer = inputValue;
+                } else if (questionType === 'drag_order') {
+                    payload.order = $('#drag-list').children('.drag-item')
+                        .map(function () { return parseInt($(this).data('original-index'), 10); })
+                        .get();
+                } else if (questionType === 'true_false') {
+                    if (tfValue === null) return;
+                    payload.value = tfValue;
+                } else {
+                    if (selectedIndex === null) return;
+                    payload.selected_index = selectedIndex;
+                }
+
+                var $btn = $(this).prop('disabled', true).text('Checking...');
 
                 $.ajax({
                     url: '/quiz/' + questionId + '/answer',
                     method: 'POST',
                     contentType: 'application/json',
-                    data: JSON.stringify(data)
+                    data: JSON.stringify(payload)
                 }).done(function (resp) {
-                    window.location.href = resp.next_url;
+                    hasSubmitted = true;
+                    lastFeedback = resp;
+                    revealFeedback(resp.feedback);
+                    var continueLabel = (questionId < totalQuestions) ? 'Next Question →' : 'See My Score →';
+                    $btn.prop('disabled', false).text(continueLabel);
                 }).fail(function () {
-                    alert('Could not save your answer. Please try again.');
-                    $btn.prop('disabled', false).text('Next');
+                    pipSay("Hmm, I couldn't save that. Try once more?", 'wrong');
+                    $btn.prop('disabled', false).text('Submit Answer');
                 });
             });
+
+            // ---- Reveal feedback ----
+            function revealFeedback(feedback) {
+                if (!feedback) return;
+
+                if (questionType === 'input') {
+                    var $input = $('#frame-input').prop('disabled', true);
+                    if (feedback.is_correct) {
+                        $input.addClass('reveal-correct');
+                    } else {
+                        $input.addClass('reveal-wrong');
+                        $('#input-correct-hint')
+                            .text('The right answer was: ' + feedback.correct_answer)
+                            .addClass('visible');
+                    }
+
+                } else if (questionType === 'drag_order') {
+                    if (dragSortable) dragSortable.option('disabled', true);
+                    var $items = $('#drag-list .drag-item').addClass('locked');
+
+                    if (feedback.is_correct) {
+                        $items.addClass('reveal-correct');
+                    } else {
+                        $items.addClass('reveal-wrong');
+                        // After the shake, smoothly reorder to the correct order to teach
+                        setTimeout(function () {
+                            var $list = $('#drag-list');
+                            var $detached = $list.children('.drag-item').detach()
+                                .removeClass('reveal-wrong');
+                            feedback.correct_order.forEach(function (origIdx) {
+                                $detached.filter('[data-original-index="' + origIdx + '"]')
+                                    .addClass('reveal-correct')
+                                    .appendTo($list);
+                            });
+                            $list.children('.drag-item').each(function (i) {
+                                $(this).find('.drag-position').text((i + 1) + '.');
+                            });
+                        }, 500);
+                    }
+
+                } else if (questionType === 'true_false') {
+                    var $tf = $('.tf-btn').prop('disabled', true).removeClass('selected');
+                    $tf.each(function () {
+                        var v = $(this).data('value') === true || $(this).data('value') === 'true';
+                        if (v === feedback.correct_value) $(this).addClass('reveal-correct');
+                        if (v === tfValue && !feedback.is_correct) $(this).addClass('reveal-wrong');
+                    });
+
+                } else {
+                    var $opts = $('.option-btn').prop('disabled', true).removeClass('selected');
+                    $opts.each(function () {
+                        var idx = parseInt($(this).data('index'), 10);
+                        if (idx === feedback.correct_index) $(this).addClass('reveal-correct');
+                        if (idx === selectedIndex && !feedback.is_correct) $(this).addClass('reveal-wrong');
+                    });
+                }
+
+                pipSay(
+                    feedback.pip_reaction || (feedback.is_correct ? 'Correct!' : 'Not quite!'),
+                    feedback.is_correct ? 'correct' : 'wrong'
+                );
+                $('#pip-hint-btn').prop('disabled', true);
+            }
         });
     </script>
     <script src="{{ url_for('static', filename='background.js') }}"></script>

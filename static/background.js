@@ -1,58 +1,122 @@
-/*
-* Particles floating style using pixels.
-* Implemented and inspired by "https://speckyboy.com/creative-snippets-pixelated-backgrounds/"
-* Debugged using chat AI.
-*/
 document.addEventListener("DOMContentLoaded", function() {
-    const pixelContainer = document.querySelector('.pixelCon');
-    const totalPixels = 500; 
-    let pixels = []; 
+    const canvas = document.getElementById('arcade-canvas');
+    if (!canvas) return;
+    
+    const ctx = canvas.getContext('2d');
 
-    // THE DEEP SEA DATA COLOR PALETTE 
-    const deepSeaColors = ['#00ffff', '#87cefa', '#e0ffff'];
+    // Make the canvas fit the exact screen size
+    function resizeCanvas() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+    }
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
 
-    // 1. Create the pixels
-    for (let i = 0; i < totalPixels; i++) {
-        let p = document.createElement('div');
-        p.className = 'pixel';
-        
-        // Randomize the size
-        let size = Math.random() * 4 + 2;
-        p.style.width = size + 'px';
-        p.style.height = size + 'px';
-        
-        // Randomize the transparency
-        p.style.opacity = Math.random() * 0.6 + 0.1; 
- 
-        let randomColor = deepSeaColors[Math.floor(Math.random() * deepSeaColors.length)];
-        p.style.backgroundColor = randomColor; 
-        
-        pixelContainer.appendChild(p);
+    // THE SPRITE ARRAYS (1 = draw color, 0 = transparent)
+    const pacmanFrames = [
+        [
+            [0,0,1,1,1,1,0,0], [0,1,1,1,1,1,1,0], [1,1,1,1,1,1,1,1], [1,1,1,1,1,1,0,0],
+            [1,1,1,1,1,1,0,0], [1,1,1,1,1,1,1,1], [0,1,1,1,1,1,1,0], [0,0,1,1,1,1,0,0]
+        ],
+        [
+            [0,0,1,1,1,1,0,0], [0,1,1,1,1,1,1,0], [1,1,1,1,1,1,1,1], [1,1,1,1,1,1,1,1],
+            [1,1,1,1,1,1,1,1], [1,1,1,1,1,1,1,1], [0,1,1,1,1,1,1,0], [0,0,1,1,1,1,0,0]
+        ]
+    ];
 
-        pixels.push({
-            element: p,
-            x: Math.random() * window.innerWidth,
-            y: Math.random() * window.innerHeight,
-            speed: Math.random() * 1.5 + 0.5,
-            waveOffset: Math.random() * Math.PI * 2 
+    const ghostFrames = [
+        [
+            [0,0,1,1,1,1,0,0], [0,1,1,1,1,1,1,0], [1,1,0,1,1,0,1,1], [1,1,1,1,1,1,1,1],
+            [1,1,1,1,1,1,1,1], [1,1,1,1,1,1,1,1], [1,1,1,1,1,1,1,1], [1,0,1,1,1,1,0,1]
+        ]
+    ];
+
+    const invaderFrames = [
+        [
+            [0,0,1,0,0,0,1,0,0], [0,0,0,1,0,1,0,0,0], [0,0,1,1,1,1,1,0,0], [0,1,1,0,1,0,1,1,0],
+            [1,1,1,1,1,1,1,1,1], [1,0,1,1,1,1,1,0,1], [1,0,1,0,0,0,1,0,1], [0,0,0,1,1,1,0,0,0]
+        ]
+    ];
+
+    const cherryFrames = [
+        [
+            [0,0,0,1,1,0,0,0], [0,0,1,1,1,1,0,0], [1,1,0,0,0,1,1,1], [1,1,1,0,1,1,1,0],
+            [0,1,1,1,1,1,0,0], [0,0,1,1,1,0,0,0]
+        ]
+    ];
+
+    // THE CHARACTERS 
+    const colors = ['#009338', '#F1EB82']; // The green and yellow from the original
+    const types = ['pacman', 'ghost', 'invader', 'cherry'];
+    const characters = [];
+    const characterCount = 12; 
+
+    for (let i = 0; i < characterCount; i++) {
+        characters.push({
+            x: Math.random() * canvas.width,
+            y: Math.random() * canvas.height,
+            vx: (Math.random() - 0.5) * 2, // Velocity X
+            vy: (Math.random() - 0.5) * 2, // Velocity Y
+            type: types[Math.floor(Math.random() * types.length)],
+            color: colors[Math.floor(Math.random() * colors.length)],
+            frame: 0,
+            size: 7
         });
     }
 
-    function animateWave() {
-        pixels.forEach(p => {
-            p.x -= p.speed;
-            p.waveOffset += 0.02;
+    let frameCount = 0;
 
-            let currentY = p.y + Math.sin(p.waveOffset) * 20;
+    // DRAWING LOGIC
+    function drawCharacter(char) {
+        let sprite;
+        if (char.type === 'pacman') sprite = pacmanFrames[char.frame];
+        else if (char.type === 'ghost') sprite = ghostFrames[0];
+        else if (char.type === 'invader') sprite = invaderFrames[0];
+        else if (char.type === 'cherry') sprite = cherryFrames[0];
 
-            if(p.x < -20) {
-                p.x = window.innerWidth + 20;
-                p.y = Math.random() * window.innerHeight;
+        ctx.fillStyle = char.color;
+
+        for (let row = 0; row < sprite.length; row++) {
+            for (let col = 0; col < sprite[row].length; col++) {
+                if (sprite[row][col] === 1) {
+                    ctx.fillRect(
+                        char.x + (col * char.size), 
+                        char.y + (row * char.size), 
+                        char.size, 
+                        char.size
+                    );
+                }
+            }
+        }
+    }
+
+    // ANIMATION 
+    function animate() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        frameCount++;
+
+        characters.forEach(char => {
+            char.x += char.vx;
+            char.y += char.vy;
+
+            const charWidth = 8 * char.size;
+            const charHeight = 8 * char.size;
+
+            if (char.x < -charWidth) char.x = canvas.width;
+            else if (char.x > canvas.width) char.x = -charWidth;
+
+            if (char.y < -charHeight) char.y = canvas.height;
+            else if (char.y > canvas.height) char.y = -charHeight;
+
+            // Pacman mouth animation 
+            if (char.type === 'pacman' && frameCount % 20 === 0) {
+                char.frame = (char.frame === 0) ? 1 : 0;
             }
 
-            p.element.style.transform = `translate(${p.x}px, ${currentY}px)`;
+            drawCharacter(char);
         });
-        requestAnimationFrame(animateWave);
+
+        requestAnimationFrame(animate);
     }
-    animateWave();
+    animate();
 });

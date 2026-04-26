@@ -1,36 +1,37 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Animator</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='homepage.css') }}">
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-</head>
+{% extends "base.html" %}
 
-<body>
-    <div class="canvas">
-        <div class="pixelCon"></div>
-    </div>
-
-    <div class="container text-center" style="position: relative; z-index: 10;">
-         <h1 class="display-1 fw-bold text-white mb-4" style="font-family: 'Gill Sans', 'Gill Sans MT', Calibri; font-size: 100px;">
-            ANIMATOR
-        </h1>
-
-        <p id="description" class="lead text-light mb-5" style="font-family: 'Times New Roman', Times, serif;">
-            Learn animation techniques through interactive lessons and quizzes.
-        </p>
-        <button id="start-button" class="btn btn-success btn-lg px-5 py-3 rounded-pill fw-bold shadow" style="font-family: 'Gill Sans', 'Gill Sans MT', Calibri;">
-            Start Learning
-        </button>
-        <br>
-        <div class="name mt-5 p-3 text-dark d-inline-block" style="font-family: 'Times New Roman', Times, serif;">
-            Cecilia Zhou, Jett Wang, Khine Su Thar, Oleh Goumain
+{% block content %}
+    <div class="container pt-5 mt-5" style="position: relative; z-index: 10;">
+        
+        <div class="row align-items-center p-3 p-md-4 mt-2">
+            
+            <div class="col-md-5 text-center mb-4 mb-md-0">
+                <img src="{{ url_for('static', filename='pip.png') }}" alt="Pip Guide" class="img-fluid" style="max-width: 350px;">
+            </div>
+            
+            <div class="col-md-7 text-center text-md-start" style="color: #ffffff; font-family: 'Gill Sans', 'Gill Sans MT', Calibri;">
+                <h1 class="mb-4" style="font-size: 3rem;">How To Make Animation</h1>
+                <p class="lead mb-4 fs-4" style="line-height: 1.6;">
+                    With Pip as your guide, you'll learn drawing techniques, frame-by-frame animation, and bring your creative ideas to life!
+                </p>
+                <button id="start-button" class="btn btn-lg px-4 py-2 mt-2" style="border: 1px solid #ffffff; color: #ffffff; background-color: transparent; border-radius: 0;">
+                    Start Animating
+                </button>
+            </div>
         </div>
+
+        <div id="about-section" class="row mt-4 pt-4 pb-4 text-center text-white d-none">
+            <div class="col-12">
+                <h2 class="display-4 mb-4" style="font-family: 'Gill Sans', 'Gill Sans MT', Calibri;">About ANIMATIC</h2>
+                <p class="lead fs-3" style="font-family: 'Times New Roman', Times, serif;">
+                    ANIMATIC is an interactive learning platform designed to teach you the fundamentals of animation through hands-on practice and engaging exercises.
+                </p>
+                <div class="name mt-4 p-3 bg-light text-dark rounded d-inline-block shadow" style="font-family: 'Times New Roman', Times, serif; font-size: 1.2rem;">
+                    Created by Cecilia Zhou, Khine Su Thar, Oleh Goumain, and Jett Wang
+                </div>
+            </div>
+        </div>
+
     </div>
 
-    <script src="{{ url_for('static', filename='homepage.js') }}"></script>
-    <script src="{{ url_for('static', filename='background.js') }}"></script>
-</body>
-</html>
+{% endblock %} 
