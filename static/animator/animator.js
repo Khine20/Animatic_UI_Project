@@ -398,7 +398,10 @@
         function scrollToActive() {
             const active = timeline.querySelector(".is-active");
             if (active) {
-                active.scrollIntoView({ behavior: "smooth", inline: "center" });
+                const targetLeft = active.offsetLeft - (timeline.clientWidth - active.offsetWidth) / 2;
+                const maxLeft = Math.max(0, timeline.scrollWidth - timeline.clientWidth);
+                const nextLeft = Math.max(0, Math.min(targetLeft, maxLeft));
+                timeline.scrollTo({ left: nextLeft, behavior: "smooth" });
             }
         }
 
@@ -408,7 +411,6 @@
             if (state.playing) {
                 onionCtx.clearRect(0, 0, onionCanvas.width, onionCanvas.height);
                 playText.textContent = "Stop";
-                playIcon.textContent = "[]";
 
                 let frameIndex = 0;
                 state.playInterval = setInterval(function () {
@@ -425,7 +427,6 @@
                 clearInterval(state.playInterval);
                 state.playInterval = null;
                 playText.textContent = "Play (" + settings.fps + "fps)";
-                playIcon.textContent = ">";
                 loadFrame(state.currentFrame);
             }
         }

@@ -12,15 +12,25 @@
         <div class="animator-workspace">
             <aside class="animator-tools" aria-label="Drawing tools">
                 <div class="animator-tools-main">
-                    <button type="button" class="animator-btn is-active" data-action="set-tool" data-tool="pen" data-tooltip="Pencil: draw on the current frame.">🖊️</button>
-                    <button type="button" class="animator-btn" data-action="set-tool" data-tool="eraser" data-tooltip="Eraser: remove parts of your drawing.">🧹</button>
+                    <button type="button" class="animator-btn is-active" data-action="set-tool" data-tool="pen" data-tooltip="Pencil: draw on the current frame.">
+                        <img class="animator-icon" src="{{ url_for('static', filename='assets/pen.png') }}" alt="Pen">
+                    </button>
+                    <button type="button" class="animator-btn" data-action="set-tool" data-tool="eraser" data-tooltip="Eraser: remove parts of your drawing.">
+                        <img class="animator-icon" src="{{ url_for('static', filename='assets/erase.png') }}" alt="Eraser">
+                    </button>
                 </div>
                 <div class="animator-tools-onion" aria-label="Effects">
-                    <button type="button" class="animator-btn" data-action="toggle-onion" data-tooltip="Onion Skin: preview nearby frames as ghosts.">🧅</button>
+                    <button type="button" class="animator-btn" data-action="toggle-onion" data-tooltip="Onion Skin: preview nearby frames as ghosts.">
+                        <img class="animator-icon" src="{{ url_for('static', filename='assets/onion.png') }}" alt="Onion skin">
+                    </button>
                 </div>
                 <div class="animator-tools-utility" aria-label="Canvas actions">
-                    <button type="button" class="animator-btn animator-btn-clear" data-action="clear" data-tooltip="Clear: erase everything on this frame.">CLR</button>
-                    <button type="button" class="animator-btn animator-btn-del" data-action="delete-frame" data-tooltip="Delete this frame (disabled if only 1 frame)">DEL</button>
+                    <button type="button" class="animator-btn animator-btn-clear" data-action="clear" data-tooltip="Clear: erase everything on this frame.">
+                        <img class="animator-icon" src="{{ url_for('static', filename='assets/delete.png') }}" alt="Clear frame">
+                    </button>
+                    <button type="button" class="animator-btn animator-btn-del" data-action="delete-frame" data-tooltip="Delete this frame (disabled if only 1 frame)">
+                        <img class="animator-icon" src="{{ url_for('static', filename='assets/trash.png') }}" alt="Delete frame">
+                    </button>
                 </div>
             </aside>
 
@@ -31,17 +41,17 @@
         </div>
 
         <div class="animator-timeline-shell">
-            <div class="animator-controls">
-                <button type="button" class="animator-btn" data-action="toggle-play" data-tooltip="Play/Stop: preview your animation.">
-                    <span data-role="play-icon"></span>
-                    <span data-role="play-text">Play ({{ fps|default(12) }}fps)</span>
-                </button>
-            </div>
-
             <div class="animator-frames">
                 <input type="range" min="1" max="1" value="1" data-role="frame-slider" aria-label="Frame slider">
                 <div class="animator-timeline" data-role="timeline" aria-label="Timeline"></div>
             </div>
+
+            <button type="button" class="animator-btn animator-btn-play" data-action="toggle-play" data-tooltip="Play/Stop: preview your animation.">
+                <span data-role="play-icon">
+                    <img src="{{ url_for('static', filename='assets/play.png') }}" alt="Play">
+                </span>
+                <span data-role="play-text">Play ({{ fps|default(12) }}fps)</span>
+            </button>
         </div>
 
         <div class="animator-statusbar">

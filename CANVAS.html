@@ -149,17 +149,17 @@
             <!-- Tool Palette (Left) -->
             <div class="d-flex flex-column gap-1 w-14 flex-shrink-0">
                 <button id="btn-pen" class="win-btn active p-2" data-action="set-tool" data-tool="pen" data-tooltip="Pencil: draw on the current frame.">
-                    ✏️
+                    <img src="/static/assets/pen.png" alt="Pen" style="width: 20px; height: 20px;">
                 </button>
                 <button id="btn-eraser" class="win-btn p-2" data-action="set-tool" data-tool="eraser" data-tooltip="Eraser: remove parts of your drawing.">
-                    🧹
+                    <img src="/static/assets/erase.png" alt="Eraser" style="width: 20px; height: 20px;">
                 </button>
                 <div class="my-1" style="height: 0.25rem; border-bottom: 1px solid #808080; border-top: 1px solid #fff;"></div>
                 <button class="win-btn p-2 text-10px fw-bold" data-action="clear" data-tooltip="Clear: erase everything on this frame.">
-                    CLR
+                    <img src="/static/assets/delete.png" alt="Clear" style="width: 20px; height: 20px;">
                 </button>
                 <button id="btn-onion" class="win-btn p-2 text-10px fw-bold" data-action="toggle-onion" data-tooltip="Onion Skin: preview nearby frames as ghosts.">
-                    ONN
+                    <img src="/static/assets/onion.png" alt="Onion Skin" style="width: 20px; height: 20px;">
                 </button>
             </div>
 
@@ -175,11 +175,13 @@
             
             <!-- Controls -->
             <div class="d-flex flex-sm-column gap-2 flex-shrink-0">
-                <button class="win-btn px-3 py-1 fw-bold" data-action="add-frame" data-tooltip="Add Frame: create the next frame in your animation.">
-                    + Add Frame
+                <button class="win-btn px-3 py-1 fw-bold" data-action="add-frame" data-tooltip="Add Frame: create the next frame in your animation." style="display: flex; align-items: center; gap: 6px;">
+                    <img src="/static/assets/delete.png" alt="Add" style="width: 16px; height: 16px;">
+                    <span class="d-none d-sm-inline">Add Frame</span>
                 </button>
-                <button id="btn-play" class="win-btn px-3 py-1 fw-bold" data-action="toggle-play" data-tooltip="Play/Stop: preview your animation at 12 fps.">
-                    <span id="play-icon">▶</span> <span id="play-text">Play (12fps)</span>
+                <button id="btn-play" class="win-btn px-3 py-1 fw-bold" data-action="toggle-play" data-tooltip="Play/Stop: preview your animation at 12 fps." style="display: flex; align-items: center; gap: 6px;">
+                    <img id="play-icon" src="/static/assets/play.png" alt="Play" style="width: 16px; height: 16px;">
+                    <span id="play-text" class="d-none d-sm-inline">Play (12fps)</span>
                 </button>
             </div>
 
@@ -518,14 +520,12 @@
             playing = !playing;
             const btn = document.getElementById('btn-play');
             const playText = document.getElementById('play-text');
-            const playIcon = document.getElementById('play-icon');
 
             if (playing) {
                 frameSlider.disabled = true;
                 onionCtx.clearRect(0, 0, onionCanvas.width, onionCanvas.height); 
                 btn.className = "win-btn active px-3 py-1 fw-bold";
                 playText.innerText = "Stop";
-                playIcon.innerText = "■";
                 
                 let f = 0;
                 playInterval = setInterval(() => {
@@ -543,7 +543,6 @@
                 frameSlider.disabled = false;
                 btn.className = "win-btn px-3 py-1 fw-bold";
                 playText.innerText = "Play (12fps)";
-                playIcon.innerText = "▶";
                 loadFrame(currentFrame);
             }
         }
