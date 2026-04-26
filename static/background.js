@@ -46,7 +46,7 @@ document.addEventListener("DOMContentLoaded", function() {
     ];
 
     // THE CHARACTERS 
-    const colors = ['#009338', '#F1EB82']; // The green and yellow from the original
+    const colors = ['#00ff62', '#F1EB82']; // The green and yellow from the original
     const types = ['pacman', 'ghost', 'invader', 'cherry'];
     const characters = [];
     const characterCount = 12; 
