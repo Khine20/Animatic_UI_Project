@@ -6,6 +6,7 @@
     <title>Animator Quiz — Question {{ question_id }}</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='homepage.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='animator/animator.css') }}">
     <style>
         /* Override homepage.css which sets body { display:flex; height:100%; overflow:hidden }
            — that was clipping pages taller than the viewport. */
@@ -281,6 +282,12 @@
     <main class="quiz-page">
         <h1 class="quiz-title">ANIMATIC QUIZ</h1>
 
+        <div style="width: 100%; max-width: 800px; margin: 0 auto 2.5rem auto; display: flex; flex-direction: column; align-items: center;">
+            {% set animator_id = 'quiz' %}
+            {% set file_name = 'your-animation.ani' %}
+            {% include 'components/animator_canvas.html' %}
+        </div>
+
         <div class="quiz-layout">
             <aside class="pip-panel" id="pip-panel">
                 <h2 class="pip-name" id="pip-name">PIP says:</h2>
@@ -358,6 +365,7 @@
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
+    <script src="{{ url_for('static', filename='animator/animator.js') }}"></script>
     <script>
         $(function () {
             var questionId      = {{ question_id }};
@@ -573,6 +581,17 @@
                 );
                 $('#pip-hint-btn').prop('disabled', true);
             }
+
+            // ---- Canvas Initialization ----
+            // Mount without an `onChange` callback to prevent edits from being saved to the server
+            var api = window.AnimaticCanvasModule.mount('#animator-root-quiz', {
+                draggable: false
+            });
+            $.get('/load_frames').done(function(data) {
+                if (data.frames && data.frames.length > 0) {
+                    api.loadFrames(data.frames);
+                }
+            });
         });
     </script>
     <script src="{{ url_for('static', filename='background.js') }}"></script>
