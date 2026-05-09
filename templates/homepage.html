@@ -1,9 +1,17 @@
 {% extends "base.html" %}
 
 {% block content %}
-    <div class="container pt-5 mt-5" style="position: relative; z-index: 10;">
+    <style>
+        /* Override homepage.css to allow scrolling when the About section is visible */
+        html, body {
+            display: block !important;
+            height: auto !important;
+            overflow: auto !important;
+        }
+    </style>
+    <div class="container d-flex align-items-center min-vh-100" style="position: relative; z-index: 10; padding-top: 56px;">
         
-        <div class="row align-items-center p-3 p-md-4 mt-2">
+        <div class="row align-items-center w-100 p-3 p-md-4">
             
             <div class="col-md-5 text-center mb-4 mb-md-0">
                 <img src="{{ url_for('static', filename='pip.png') }}" alt="Pip Guide" class="img-fluid" style="max-width: 350px;">
@@ -19,39 +27,6 @@
                 </button>
             </div>
         </div>
-
-        <div id="about-section" class="row align-items-center mt-5 p-4 p-md-5 d-none" style="margin-bottom: 4rem;">
-            
-            <div class="col-md-7 text-center mb-4 mb-md-0 px-md-4" style="color: #fefefe; font-family: 'Gill Sans', 'Gill Sans MT', Calibri, sans-serif;">
-                <p class="fs-4 mb-4" style="line-height: 1.8;">
-                    <strong>ANIMATIC</strong> is an interactive learning platform designed 
-                    to teach you the fundamentals of animation through 
-                    hands-on practice and engaging exercises.
-                </p>
-                
-                <div class="mt-4 pt-4" style="border-top: 1px solid rgba(255,255,255,0.2);">
-                    <span class="text-uppercase text-white-50" style="letter-spacing: 2px; font-size: 0.9rem;">Created By</span>
-                    
-                    <h3 class="fw-bold mt-2 mb-3" style="font-size: 1.6rem; letter-spacing: 1px;">
-                        Cecilia Zhou, Khine Su Thar, <br class="d-none d-md-block">Oleh Goumain, & Jett Wang
-                    </h3>
-                    
-                    <p class="fs-6 text-white-50 mb-0">
-                        Icons by <a href="https://www.flaticon.com/free-icons/animation" class="text-white text-decoration-underline" title="animation icons" target="_blank">Freepik - Flaticon</a>
-                    </p>
-                </div>
-            </div>
-
-            <div class="col-md-5 d-flex justify-content-center mt-4 mt-md-0">
-                <div style="border: 2px solid #ffffff; padding: 1.5rem 1rem; width: 100%; max-width: 280px; text-align: center;">
-                    <h2 class="fw-bold fst-italic mb-0" style="font-size: 3.5rem; color: #ffffff; font-family: 'Gill Sans', 'Gill Sans MT', Calibri, sans-serif; letter-spacing: 3px;">
-                        ABOUT
-                    </h2>
-                </div>
-            </div>
-
-        </div>
-
     </div>
 
 {% endblock %}

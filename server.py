@@ -112,6 +112,12 @@ def home():
     return render_template('homepage.html')
 
 
+@app.route('/about')
+def about():
+    log_visit('about')
+    return render_template('about.html')
+
+
 @app.route('/save_frames', methods=['POST'])
 def save_frames():
     global canvas_frames
