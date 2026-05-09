@@ -1,13 +1,11 @@
 html, body {
-    background: #005397ff;
+    background: #00325aff;
     margin: 0;
     width: 100%;
-    height: 100%;
-    display: flex;
-    justify-content: center;
-    align-items: center;
+    min-height: 100%;
+    display: block;
     text-align: center;
-    overflow: hidden;
+    overflow: auto;
 }
 
 .pixelCon {

@@ -5,10 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Animator Workspace</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@400;500;600;700&family=Fugaz+One&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='animator/animator.css') }}">
     <style>
         body {
-            background: #005397;
+            background: #00325a;
             margin: 0;
             width: 100%;
             height: 100%;
@@ -17,6 +18,7 @@
             align-items: center;
             text-align: center;
             overflow: hidden;
+            font-family: Calibri, sans-serif;
         }
 
         .workspace-page {
@@ -39,28 +41,70 @@
         }
 
         .pip-panel {
-            background: white;
-            border: 2px solid #00942f;
-            border-radius: 8px;
-            padding: 2rem;
-            width: 300px;
+            border: none;
+            background: transparent;
+            padding: 100px 1rem 1rem;
+            width: 345px;
             color: black;
             display: flex;
             flex-direction: column;
             gap: 1.5rem;
         }
 
-        .pip-name {
-            font-size: 20px;
-            font-weight: bold;
-            color: #00942f;
-            margin: 0;
+        .pip-image {
+            width: 250px;
+            height: auto;
+            position: absolute;
+            bottom: calc(100% - 10px);
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 2;
+        }
+
+        .pip-dialogue-container {
+            position: relative;
+            display: flex;
+            justify-content: center;
         }
 
         .pip-dialogue {
+            font-family: 'Comfortaa', cursive;
             font-size: 16px;
             line-height: 1.5;
             min-height: 80px;
+            position: relative;
+            background: white;
+            border: 2px solid #00942f;
+            border-radius: 8px;
+            padding: 1rem;
+            width: 100%;
+            max-width: 325px;
+        }
+
+        .pip-dialogue::before {
+            content: '';
+            position: absolute;
+            top: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0;
+            height: 0;
+            border-left: 10px solid transparent;
+            border-right: 10px solid transparent;
+            border-bottom: 10px solid #00942f;
+        }
+
+        .pip-dialogue::after {
+            content: '';
+            position: absolute;
+            top: -8px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0;
+            height: 0;
+            border-left: 8px solid transparent;
+            border-right: 8px solid transparent;
+            border-bottom: 8px solid white;
         }
 
         .pip-hint {
@@ -197,9 +241,9 @@
     </style>
 </head>
 <body>
-    <nav class="navbar navbar-expand-lg fixed-top shadow-sm" style="background-color: #005397;">
+    <nav class="navbar navbar-expand-lg fixed-top shadow-sm" style="background-color: #00325a;">
         <div class="container">
-            <a class="navbar-brand fw-bold text-white fst-italic" href="/" style="font-family: 'Gill Sans', 'Gill Sans MT', Calibri; font-size: 1.8rem; letter-spacing: 1px;">
+            <a class="navbar-brand fw-bold text-white fst-italic" href="/" style="font-family: 'Fugaz One', sans-serif; font-size: 1.8rem; letter-spacing: 1px;">
                 ANIMATIC
             </a>
         </div>
@@ -207,9 +251,11 @@
     <main class="workspace-page">
         <div class="workspace-layout">
             <aside class="pip-panel">
-                <h2 class="pip-name">PIP says:</h2>
-                <div class="pip-dialogue" id="pip-text">
-                    Hi, I’m Pip! I’ll be your guide as you create your first animation.
+                <div class="pip-dialogue-container">
+                    <img src="{{ url_for('static', filename='assets/pipInstruct.png') }}" alt="Pip" class="pip-image">
+                    <div class="pip-dialogue" id="pip-text">
+                        Hi, I’m Pip! I’ll be your guide as you create your first animation.
+                    </div>
                 </div>
                 <div style="display: flex; gap: 0.5rem;">
                     <button class="pip-btn" id="pip-prev-btn" style="display: none;">⬅️</button>
@@ -313,6 +359,15 @@
             const updatePip = function () {
                 pipText.textContent = dialogues[step];
                 pipHint.textContent = hints[step] || '';
+                
+                // Enable floor line from step 3 onwards
+                if (api && typeof api.setFloor === 'function') {
+                    if (step >= 3) {
+                        api.setFloor(true);
+                    } else {
+                        api.setFloor(false);
+                    }
+                }
                 
                 // For step 2, use the currently hovered tooltip if available, otherwise use default
                 if (step === 2) {
