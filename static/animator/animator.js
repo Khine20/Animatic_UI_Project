@@ -126,7 +126,8 @@
             dragPointerId: null,
             dragOffsetX: 0,
             dragOffsetY: 0,
-            dragSourceIndex: null
+            dragSourceIndex: null,
+            showFloor: false
         };
 
         function notifyChange() {
@@ -159,6 +160,22 @@
             toolButtons.forEach((button) => {
                 button.classList.toggle("is-active", button.dataset.tool === nextTool);
             });
+        }
+
+        function drawFloor() {
+            if (!state.showFloor) {
+                return;
+            }
+            const y = mainCanvas.height * 0.75;
+            ctx.save();
+            ctx.strokeStyle = "#888888";
+            ctx.lineWidth = 2;
+            ctx.setLineDash([5, 5]);
+            ctx.beginPath();
+            ctx.moveTo(0, y);
+            ctx.lineTo(mainCanvas.width, y);
+            ctx.stroke();
+            ctx.restore();
         }
 
         function saveFrame() {
@@ -263,6 +280,7 @@
             const image = new Image();
             image.onload = function () {
                 ctx.drawImage(image, 0, 0);
+                drawFloor();
             };
             image.src = state.frames[state.currentFrame] || "";
 
@@ -418,6 +436,7 @@
                     image.onload = function () {
                         ctx.clearRect(0, 0, mainCanvas.width, mainCanvas.height);
                         ctx.drawImage(image, 0, 0);
+                        drawFloor();
                     };
                     image.src = state.frames[frameIndex] || state.frames[0] || "";
                     frameSlider.value = String(frameIndex + 1);
@@ -716,6 +735,10 @@
             },
             setTool: setTool,
             clear: clearCanvas,
+            setFloor: function (enabled) {
+                state.showFloor = enabled;
+                loadFrame(state.currentFrame);
+            },
             exportGif: exportGif,
             destroy: destroy
         };
