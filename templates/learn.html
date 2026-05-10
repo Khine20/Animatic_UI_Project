@@ -351,8 +351,18 @@
                 "Click play. Click next when you’re ready for the quiz!"
             ];
 
+            const toolInfo = {
+                "pen": { title: "Pen", text: "Draw your animation on the canvas frame by frame with this tool.<br><br>Traditional animators used to draw entirely with pencils on paper before tracing the final lines in ink!" },
+                "eraser": { title: "Eraser", text: "Remove any mistakes or refine your drawing by erasing unwanted lines.<br><br>The first erasers used by early artists were actually made of rolled-up crustless bread before rubber was discovered!" },
+                "clear": { title: "Clear Canvas", text: "Instantly wipe your entire frame clean so you can start completely fresh.<br><br>In early animation, cleaning a cel meant literally washing the paint off so the expensive celluloid sheets could be reused." },
+                "toggle-onion": { title: "Onion Skin", text: "See a faded version of your previous frames to help you perfectly line up your next drawing.<br><br>It's called \"onion skinning\" because animators originally used thin, translucent paper that resembled the skin of an onion!" },
+                "add-frame": { title: "Add Frame", text: "Create a brand new blank frame to continue your animation sequence.<br><br>A typical feature-length animated film requires drawing over 100,000 individual frames!" },
+                "toggle-play": { title: "Play / Stop", text: "Watch your individual drawings come to life in a continuous looping movie.<br><br>The illusion of movement is caused by \"persistence of vision,\" a trick where your brain magically blends rapid individual images together." },
+                "delete-frame": { title: "Delete Frame", text: "Remove the current frame from your animation timeline." }
+            };
+
             let step = 0;
-            let currentToolTip = null; // Track the currently hovered tool tooltip
+            let currentToolKey = null; // Track the currently hovered tool identifier
             const defaultStep2Mission = mission[2]; // Store the default step 2 mission text
             const defaultMissionName = 'Mission'; // Store the default mission title
 
@@ -371,12 +381,17 @@
                 
                 // For step 2, use the currently hovered tooltip if available, otherwise use default
                 if (step === 2) {
-                    missionText.textContent = currentToolTip || defaultStep2Mission;
-                    missionName.textContent = currentToolTip ? 'Tool' : defaultMissionName;
+                    if (currentToolKey && toolInfo[currentToolKey]) {
+                        missionName.textContent = toolInfo[currentToolKey].title;
+                        missionText.innerHTML = toolInfo[currentToolKey].text;
+                    } else {
+                        missionText.innerHTML = defaultStep2Mission;
+                        missionName.textContent = defaultMissionName;
+                    }
                 } else {
-                    missionText.textContent = mission[step] || '';
+                    missionText.innerHTML = mission[step] || '';
                     missionName.textContent = defaultMissionName;
-                    currentToolTip = null; // Clear tooltip when leaving step 2
+                    currentToolKey = null; // Clear tool tracking when leaving step 2
                 }
             };
 
@@ -408,25 +423,31 @@
             pipPrevBtn.style.display = step > 0 ? 'inline-block' : 'none';
 
             // Step 2 tool tooltip integration: show tool descriptions in mission panel
-            // Use event delegation to catch both static and dynamically added elements with data-tooltip
             const animatorRoot = document.querySelector('#animator-root-lesson-base');
             
             if (animatorRoot) {
                 animatorRoot.addEventListener('mouseover', function (e) {
+                    if (step !== 2) return;
                     const button = e.target.closest('[data-tooltip]');
-                    if (button && step === 2) {
-                        currentToolTip = button.dataset.tooltip;
-                        missionText.textContent = currentToolTip;
-                        missionName.textContent = 'Tool';
+                    if (button) {
+                        let toolKey = button.dataset.tool || button.dataset.action;
+                        if (button.classList.contains('animator-thumb-add')) {
+                            toolKey = "add-frame";
+                        }
+                        
+                        if (toolKey && toolInfo[toolKey]) {
+                            currentToolKey = toolKey;
+                            updatePip();
+                        }
                     }
                 });
                 
                 animatorRoot.addEventListener('mouseout', function (e) {
+                    if (step !== 2) return;
                     const button = e.target.closest('[data-tooltip]');
-                    if (button && step === 2) {
-                        currentToolTip = null;
-                        missionText.textContent = defaultStep2Mission;
-                        missionName.textContent = defaultMissionName;
+                    if (button) {
+                        currentToolKey = null;
+                        updatePip();
                     }
                 });
             }

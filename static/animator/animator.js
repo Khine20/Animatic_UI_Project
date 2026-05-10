@@ -1,60 +1,117 @@
 (function (global) {
     "use strict";
 
-    let tooltipEl = null;
-    let tooltipTimer = null;
-    let tooltipTarget = null;
+    const tooltipPool = [];
+    let hoverTarget = null;
+    let isTooltipInit = false;
+
+    function getTooltipState(targetEl) {
+        let state = tooltipPool.find(t => t.target === targetEl);
+        if (!state) {
+            // Find a free tooltip, or one attached to a tool that was removed from the DOM
+            state = tooltipPool.find(t => !t.inUse || (t.target && !document.body.contains(t.target)));
+            if (!state) {
+                const el = document.createElement("div");
+                el.className = "animator-tooltip";
+                el.setAttribute("role", "tooltip");
+                el.setAttribute("aria-hidden", "true");
+                document.body.appendChild(el);
+                state = { el: el, timer: null, target: null, isAuto: false, inUse: false };
+                tooltipPool.push(state);
+            }
+            if (state.inUse && state.target && !document.body.contains(state.target)) {
+                clearTimeout(state.timer);
+                state.el.classList.remove("is-visible");
+                state.el.setAttribute("aria-hidden", "true");
+            }
+            state.inUse = true;
+            state.target = targetEl;
+        }
+        return state;
+    }
+
+    function releaseTooltip(targetEl) {
+        if (!targetEl) return;
+        const state = tooltipPool.find(t => t.target === targetEl);
+        if (state) {
+            clearTimeout(state.timer);
+            state.el.classList.remove("is-visible");
+            state.el.setAttribute("aria-hidden", "true");
+            state.isAuto = false;
+            state.target = null;
+            state.inUse = false;
+        }
+    }
 
     function initTooltip() {
-        if (tooltipEl) return;
-        tooltipEl = document.createElement("div");
-        tooltipEl.className = "animator-tooltip";
-        tooltipEl.setAttribute("role", "tooltip");
-        tooltipEl.setAttribute("aria-hidden", "true");
-        document.body.appendChild(tooltipEl);
+        if (isTooltipInit) return;
+        isTooltipInit = true;
 
         document.addEventListener("mouseover", function (e) {
             if (!e.target || typeof e.target.closest !== "function") return;
             const el = e.target.closest("[data-tooltip]");
+            
+            // Switch to normal hover behavior if hovering over an auto-tooltip
+            if (el) {
+                const state = tooltipPool.find(t => t.target === el);
+                if (state && state.isAuto) {
+                    state.isAuto = false;
+                }
+            }
+
             if (!el) {
-                hideTooltip();
+                if (hoverTarget) {
+                    const oldState = tooltipPool.find(t => t.target === hoverTarget);
+                    if (oldState && !oldState.isAuto) {
+                        releaseTooltip(hoverTarget);
+                    }
+                }
+                hoverTarget = null;
                 return;
             }
-            if (tooltipTarget !== el) {
-                tooltipTarget = el;
+
+            if (hoverTarget !== el) {
+                if (hoverTarget) {
+                    const oldState = tooltipPool.find(t => t.target === hoverTarget);
+                    if (oldState && !oldState.isAuto) {
+                        releaseTooltip(hoverTarget);
+                    }
+                }
+                hoverTarget = el;
                 showTooltip(el, e.clientX, e.clientY);
             }
         });
 
         document.addEventListener("mousemove", function (e) {
-            if (tooltipTarget && tooltipEl.classList.contains("is-visible")) {
-                placeTooltip(e.clientX, e.clientY);
+            if (hoverTarget) {
+                const state = tooltipPool.find(t => t.target === hoverTarget);
+                if (state && state.el.classList.contains("is-visible")) {
+                    // Only follow the cursor if it's a standard hover or they're inside the target
+                    if (!state.isAuto || hoverTarget.contains(e.target)) {
+                        placeTooltip(state.el, e.clientX, e.clientY);
+                    }
+                }
             }
         });
 
         document.addEventListener("mouseout", function (e) {
-            if (!tooltipTarget) return;
+            if (!hoverTarget) return;
             if (!e.target || typeof e.target.closest !== "function") return;
             const fromEl = e.target.closest("[data-tooltip]");
-            if (fromEl !== tooltipTarget) return;
+            if (fromEl !== hoverTarget) return;
 
             const toEl = e.relatedTarget;
-            if (toEl && tooltipTarget.contains(toEl)) return;
+            if (toEl && hoverTarget.contains(toEl)) return;
 
-            hideTooltip();
+            const state = tooltipPool.find(t => t.target === hoverTarget);
+            if (state && !state.isAuto) {
+                releaseTooltip(hoverTarget);
+            }
+            hoverTarget = null;
         });
     }
 
-    function hideTooltip() {
-        clearTimeout(tooltipTimer);
-        if (tooltipEl) {
-            tooltipEl.classList.remove("is-visible");
-            tooltipEl.setAttribute("aria-hidden", "true");
-        }
-        tooltipTarget = null;
-    }
-
-    function placeTooltip(x, y) {
+    function placeTooltip(tooltipEl, x, y) {
         if (!tooltipEl) return;
         const offset = 14;
         const rect = tooltipEl.getBoundingClientRect();
@@ -65,15 +122,27 @@
         tooltipEl.style.top = Math.max(8, Math.min(y + offset, maxTop)) + "px";
     }
 
-    function showTooltip(el, x, y) {
+    function showTooltip(el, x, y, isAuto = false) {
         const text = el.dataset.tooltip;
         if (!text) return;
-        clearTimeout(tooltipTimer);
-        tooltipTimer = setTimeout(function () {
-            tooltipEl.textContent = text;
-            tooltipEl.classList.add("is-visible");
-            tooltipEl.setAttribute("aria-hidden", "false");
-            placeTooltip(x, y);
+
+        // Suppress native tooltip
+        if (el.hasAttribute("title")) {
+            el.dataset.nativeTitle = el.getAttribute("title");
+            el.removeAttribute("title");
+        }
+
+        const state = getTooltipState(el);
+        if (isAuto) {
+            state.isAuto = true;
+        }
+
+        clearTimeout(state.timer);
+        state.timer = setTimeout(function () {
+            state.el.textContent = text;
+            state.el.classList.add("is-visible");
+            state.el.setAttribute("aria-hidden", "false");
+            placeTooltip(state.el, x, y);
         }, 120);
     }
 
@@ -127,7 +196,9 @@
             dragOffsetX: 0,
             dragOffsetY: 0,
             dragSourceIndex: null,
-            showFloor: false
+            showFloor: false,
+            highlightedTools: new Set(),
+            tutorialInterval: null
         };
 
         function notifyChange() {
@@ -304,6 +375,11 @@
         }
 
         function updateTimeline() {
+            timeline.querySelectorAll('[data-tooltip]').forEach(el => {
+                releaseTooltip(el);
+                if (hoverTarget === el) hoverTarget = null;
+            });
+
             timeline.innerHTML = "";
             frameSlider.max = String(Math.max(1, state.frames.length));
             frameSlider.value = String(state.currentFrame + 1);
@@ -402,6 +478,9 @@
                 const addBtn = document.createElement("button");
                 addBtn.type = "button";
                 addBtn.className = "animator-thumb-add";
+                if (state.highlightedTools.has("add") || state.highlightedTools.has("add-frame")) {
+                    addBtn.classList.add("is-highlighted");
+                }
                 addBtn.title = "Add Frame";
                 addBtn.setAttribute('aria-label', 'Add Frame');
                 addBtn.dataset.tooltip = "Add Frame: create the next frame in your animation.";
@@ -652,6 +731,26 @@
                 scrubFrame(event.target.value);
             });
             root.addEventListener("click", handleActionClick);
+
+            root.addEventListener("mouseover", function (event) {
+                const btn = event.target.closest(".is-highlighted");
+                if (btn) {
+                    btn.classList.remove("is-highlighted");
+                    
+                    const action = btn.dataset.action || btn.dataset.tool;
+                    if (action) {
+                        state.highlightedTools.delete(action);
+                    }
+                    if (btn.classList.contains("animator-btn-play")) {
+                        state.highlightedTools.delete("play");
+                        state.highlightedTools.delete("toggle-play");
+                    }
+                    if (btn.classList.contains("animator-thumb-add")) {
+                        state.highlightedTools.delete("add");
+                        state.highlightedTools.delete("add-frame");
+                    }
+                }
+            });
         }
 
         function exportGif(options) {
@@ -710,6 +809,7 @@
 
         function destroy() {
             clearInterval(state.playInterval);
+            clearInterval(state.tutorialInterval);
             root.__animaticMounted = false;
             root.__animaticApi = null;
         }
@@ -739,12 +839,102 @@
                 state.showFloor = enabled;
                 loadFrame(state.currentFrame);
             },
+            highlightTool: function (actionOrTool, enable = true) {
+                if (enable) {
+                    state.highlightedTools.add(actionOrTool);
+                } else {
+                    state.highlightedTools.delete(actionOrTool);
+                }
+
+                let selector = `[data-tool="${actionOrTool}"], [data-action="${actionOrTool}"]`;
+                if (actionOrTool === "play" || actionOrTool === "toggle-play") selector += `, .animator-btn-play`;
+                if (actionOrTool === "add" || actionOrTool === "add-frame") selector += `, .animator-thumb-add`;
+                
+                const els = root.querySelectorAll(selector);
+                
+                if (enable) {
+                    els.forEach(el => {
+                        el.classList.add("is-highlighted");
+                        if (el.dataset.tooltip) {
+                            const rect = el.getBoundingClientRect();
+                            showTooltip(el, rect.left + rect.width / 2, rect.top + rect.height / 2, true);
+                        }
+                    });
+                } else {
+                    els.forEach(el => {
+                        el.classList.remove("is-highlighted");
+                        releaseTooltip(el);
+                    });
+                }
+            },
+            highlightAllTools: function () {
+                ["pen", "eraser", /* "clear", */ "toggle-onion", "toggle-play", "add-frame"].forEach(tool => {
+                    this.highlightTool(tool, true);
+                });
+            },
+            lastHighlightedStep: null,
+            highlightTutorialStep: function (text) {
+                if (!text) return;
+
+                const normalizedText = text.toLowerCase()
+                    .replace(/['"“”’]/g, '')
+                    .replace(/\s+/g, ' ');
+
+                let currentStep = null;
+                // Check in reverse order so if all steps are on screen, the latest one wins
+                if (normalizedText.includes("hit the play button to see your an")) {
+                    currentStep = "step4";
+                } else if (normalizedText.includes("create a new frame")) {
+                    currentStep = "step3";
+                } else if (normalizedText.includes("great! now click the onion")) {
+                    currentStep = "step2";
+                } else if (normalizedText.includes("ive already placed the ground for you")) {
+                    currentStep = "step1";
+                } else if (normalizedText.includes("lets learn about the tools first")) {
+                    currentStep = "step0";
+                }
+
+                // If no matching step or we already highlighted this step, do nothing
+                if (currentStep === this.lastHighlightedStep) {
+                    return;
+                }
+                this.lastHighlightedStep = currentStep;
+
+                // Clear previous highlights
+                ["pen", "eraser", /* "clear", */ "toggle-onion", "toggle-play", "add-frame"].forEach(tool => {
+                    this.highlightTool(tool, false);
+                });
+
+                if (!currentStep) return;
+
+                if (currentStep === "step0") {
+                    ["pen", "eraser", /* "clear", */ "toggle-onion", "toggle-play", "add-frame"].forEach(tool => {
+                        this.highlightTool(tool, true);
+                    });
+                } else if (currentStep === "step1") {
+                    this.highlightTool("pen", true);
+                    this.highlightTool("eraser", true);
+                } else if (currentStep === "step2") {
+                    this.highlightTool("toggle-onion", true);
+                } else if (currentStep === "step3") {
+                    this.highlightTool("add-frame", true);
+                } else if (currentStep === "step4") {
+                    this.highlightTool("toggle-play", true);
+                }
+            },
             exportGif: exportGif,
             destroy: destroy
         };
 
         root.__animaticMounted = true;
         root.__animaticApi = api;
+
+        // Auto-detect tutorial text on the page without needing manual integration in learn.html
+        state.tutorialInterval = setInterval(() => {
+            if (document.body) {
+                api.highlightTutorialStep(document.body.innerText);
+            }
+        }, 500);
 
         return api;
     }

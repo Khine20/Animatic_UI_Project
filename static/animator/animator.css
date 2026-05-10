@@ -163,6 +163,34 @@
     box-shadow: inset 1px 1px 0 var(--border-mid), inset -1px -1px 0 #fff;
 }
 
+.is-highlighted {
+    position: relative;
+}
+
+.is-highlighted::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: auto;
+    height: calc(100% + 4px);
+    aspect-ratio: 1;
+    transform: translate(-50%, -50%);
+    border: 3px solid #ffff00;
+    border-radius: 50%;
+    box-sizing: border-box;
+    box-shadow: 0 0 8px rgba(255, 255, 0, 0.6);
+    pointer-events: none;
+    z-index: 10;
+    animation: highlight-pulse 1.5s infinite;
+}
+
+@keyframes highlight-pulse {
+    0% { transform: translate(-50%, -50%) scale(1); opacity: 0.8; }
+    50% { transform: translate(-50%, -50%) scale(1.15); opacity: 1; }
+    100% { transform: translate(-50%, -50%) scale(1); opacity: 0.8; }
+}
+
 .animator-canvas-stage {
     position: relative;
     width: 100%;
