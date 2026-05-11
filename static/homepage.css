@@ -8,6 +8,11 @@ html, body {
     overflow: auto;
 }
 
+body {
+    position: relative;
+    isolation: isolate;
+}
+
 .pixelCon {
     pointer-events: none;
     position: fixed;
@@ -16,8 +21,25 @@ html, body {
     top: 0;
     left: 0;
     overflow: hidden;
-    z-index: 0;
+    z-index: 2;
     image-rendering: pixelated;
+}
+
+#motion-particles {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.page-content-layer {
+    position: relative;
+    z-index: 3;
+}
+
+.site-nav {
+    z-index: 20;
 }
 
 .pixel {

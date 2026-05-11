@@ -6,6 +6,7 @@
     <title>Animator Workspace</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@400;500;600;700&family=Fugaz+One&display=swap" rel="stylesheet">
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='grid.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='animator/animator.css') }}">
     <style>
         body {
@@ -19,6 +20,8 @@
             text-align: center;
             overflow: hidden;
             font-family: Calibri, sans-serif;
+            position: relative;
+            isolation: isolate;
         }
 
         .workspace-page {
@@ -28,6 +31,8 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
+            position: relative;
+            z-index: 3;
         }
 
         .workspace-layout {
@@ -241,13 +246,8 @@
     </style>
 </head>
 <body>
-    <nav class="navbar navbar-expand-lg fixed-top shadow-sm" style="background-color: #00325a;">
-        <div class="container">
-            <a class="navbar-brand fw-bold text-white fst-italic" href="/" style="font-family: 'Fugaz One', sans-serif; font-size: 1.8rem; letter-spacing: 1px;">
-                ANIMATIC
-            </a>
-        </div>
-    </nav>
+    {% include 'components/grid_background.html' %}
+    {% include 'components/navbar.html' %}
     <main class="workspace-page">
         <div class="workspace-layout">
             <aside class="pip-panel">

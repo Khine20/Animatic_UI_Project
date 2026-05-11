@@ -6,6 +6,7 @@
     <title>Animator Quiz — Question {{ question_id }}</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@400;500;600;700&family=Fugaz+One&display=swap" rel="stylesheet">
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='grid.css') }}">
     <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='homepage.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='animator/animator.css') }}">
     <style>
@@ -21,6 +22,11 @@
             min-height: 100vh;
             overflow: auto !important;
             margin: 0;
+        }
+
+        body {
+            position: relative;
+            isolation: isolate;
         }
 
         .quiz-page {
@@ -325,13 +331,8 @@
     </style>
 </head>
 <body>
-    <nav class="navbar navbar-expand-lg fixed-top shadow-sm" style="background-color: #00325a;">
-        <div class="container">
-            <a class="navbar-brand fw-bold text-white fst-italic" href="/" style="font-family: 'Fugaz One', sans-serif; font-size: 1.8rem; letter-spacing: 1px;">
-                ANIMATIC
-            </a>
-        </div>
-    </nav>
+    {% include 'components/grid_background.html' %}
+    {% include 'components/navbar.html' %}
     <main class="quiz-page">
         <h1 class="quiz-title">ANIMATIC QUIZ</h1>
 
