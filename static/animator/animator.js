@@ -177,7 +177,7 @@
         const playText = root.querySelector('[data-role="play-text"]');
         const toolButtons = root.querySelectorAll('[data-action="set-tool"]');
 
-        if (!mainCanvas || !onionCanvas || !timeline || !frameSlider || !statusCoords || !playIcon || !playText) {
+        if (!mainCanvas || !onionCanvas || !timeline || !playIcon) {
             throw new Error("Animator module markup is incomplete.");
         }
 
@@ -284,8 +284,9 @@
 
         function moveDrawing(event) {
             const pos = getCoords(event);
-            statusCoords.textContent = Math.round(pos.x) + ", " + Math.round(pos.y);
-
+            if(statusCoords) {
+                statusCoords.textContent = Math.round(pos.x) + ", " + Math.round(pos.y);
+            }
             if (!state.isDrawing) {
                 return;
             }
@@ -381,8 +382,6 @@
             });
 
             timeline.innerHTML = "";
-            frameSlider.max = String(Math.max(1, state.frames.length));
-            frameSlider.value = String(state.currentFrame + 1);
 
                 // DEL button state
                 const delBtn = root.querySelector('.animator-btn-del');
@@ -505,9 +504,12 @@
         function togglePlay() {
             state.playing = !state.playing;
 
+            const playBtn = root.querySelector('.animator-btn-play');
             if (state.playing) {
                 onionCtx.clearRect(0, 0, onionCanvas.width, onionCanvas.height);
-                playText.textContent = "Stop";
+                if(playText) {
+                    playText.textContent = "Stop";
+                }
 
                 let frameIndex = 0;
                 state.playInterval = setInterval(function () {
@@ -518,13 +520,14 @@
                         drawFloor();
                     };
                     image.src = state.frames[frameIndex] || state.frames[0] || "";
-                    frameSlider.value = String(frameIndex + 1);
                     frameIndex = (frameIndex + 1) % state.frames.length;
                 }, 1000 / settings.fps);
             } else {
                 clearInterval(state.playInterval);
                 state.playInterval = null;
-                playText.textContent = "Play (" + settings.fps + "fps)";
+                if(playText) {
+                    playText.textContent = "Play (" + settings.fps + "fps)";
+                }
                 loadFrame(state.currentFrame);
             }
         }
@@ -726,10 +729,12 @@
             mainCanvas.addEventListener("touchmove", moveDrawing, { passive: false });
             window.addEventListener("mouseup", stopDrawing);
             window.addEventListener("touchend", stopDrawing);
-            frameSlider.addEventListener("input", function (event) {
-                if (state.playing) return; // Ignore input during playback
-                scrubFrame(event.target.value);
-            });
+            if(frameSlider) {
+                frameSlider.addEventListener("input", function (event) {
+                    if (state.playing) return; // Ignore input during playback
+                    scrubFrame(event.target.value);
+                });
+            }
             root.addEventListener("click", handleActionClick);
 
             root.addEventListener("mouseover", function (event) {
