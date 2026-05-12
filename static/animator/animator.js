@@ -181,8 +181,43 @@
             throw new Error("Animator module markup is incomplete.");
         }
 
+        // Ensure the animator root is responsive and can scroll horizontally on small viewports
+        root.style.maxWidth = "100%";
+        root.style.maxHeight = "100vh";
+        root.style.overflow = "auto";
+        root.style.touchAction = "auto";
+
+        if (!settings.draggable) {
+            // Break out of any absolute/fixed centering traps that clip the UI off-screen
+            root.style.position = "relative";
+            root.style.left = "auto";
+            root.style.top = "auto";
+            root.style.transform = "none";
+            root.style.margin = "0 auto";
+        }
+
+        // Clear any global overflow locks that might prevent page scrolling
+        document.body.style.overflow = "auto";
+        document.documentElement.style.overflow = "auto";
+
         const ctx = mainCanvas.getContext("2d", { willReadFrequently: true });
         const onionCtx = onionCanvas.getContext("2d");
+
+        let floorLine = root.querySelector('.animator-floor-line');
+        if (!floorLine) {
+            floorLine = document.createElement('div');
+            floorLine.className = 'animator-floor-line';
+            floorLine.style.position = 'absolute';
+            floorLine.style.top = '75%';
+            floorLine.style.left = '0';
+            floorLine.style.width = '100%';
+            floorLine.style.borderTop = '2px dashed #888888';
+            floorLine.style.pointerEvents = 'none';
+            floorLine.style.display = 'none';
+            floorLine.style.zIndex = '10';
+            mainCanvas.parentNode.style.position = 'relative';
+            mainCanvas.parentNode.appendChild(floorLine);
+        }
 
         const state = {
             frames: [],
@@ -213,6 +248,11 @@
             [mainCanvas, onionCanvas].forEach((canvas) => {
                 canvas.width = settings.width;
                 canvas.height = settings.height;
+                // Prevent scrolling when drawing on the canvas, but allow it elsewhere
+                canvas.style.touchAction = "none";
+                // Clear any inline height overrides so the canvas relies entirely on its CSS boundary
+                canvas.style.maxWidth = "";
+                canvas.style.height = "";
             });
             ctx.clearRect(0, 0, settings.width, settings.height);
         }
@@ -234,19 +274,9 @@
         }
 
         function drawFloor() {
-            if (!state.showFloor) {
-                return;
+            if (floorLine) {
+                floorLine.style.display = (state.showFloor && !state.playing) ? "block" : "none";
             }
-            const y = mainCanvas.height * 0.75;
-            ctx.save();
-            ctx.strokeStyle = "#888888";
-            ctx.lineWidth = 2;
-            ctx.setLineDash([5, 5]);
-            ctx.beginPath();
-            ctx.moveTo(0, y);
-            ctx.lineTo(mainCanvas.width, y);
-            ctx.stroke();
-            ctx.restore();
         }
 
         function saveFrame() {
@@ -503,12 +533,17 @@
 
         function togglePlay() {
             state.playing = !state.playing;
+            drawFloor();
 
             const playBtn = root.querySelector('.animator-btn-play');
+            const playIcon = root.querySelector('[data-role="play-icon"]');
             if (state.playing) {
                 onionCtx.clearRect(0, 0, onionCanvas.width, onionCanvas.height);
                 if(playText) {
                     playText.textContent = "Stop";
+                }
+                if(playIcon) {
+                    playIcon.src = playIcon.src.replace('play.png', 'stop.png');
                 }
 
                 let frameIndex = 0;
@@ -520,6 +555,13 @@
                         drawFloor();
                     };
                     image.src = state.frames[frameIndex] || state.frames[0] || "";
+
+                    // Highlight current frame in timeline
+                    const thumbs = timeline.querySelectorAll('.animator-thumb');
+                    thumbs.forEach((thumb, i) => {
+                        thumb.classList.toggle('is-active', i === frameIndex);
+                    });
+                    
                     frameIndex = (frameIndex + 1) % state.frames.length;
                 }, 1000 / settings.fps);
             } else {
@@ -527,6 +569,9 @@
                 state.playInterval = null;
                 if(playText) {
                     playText.textContent = "Play (" + settings.fps + "fps)";
+                }
+                if(playIcon) {
+                    playIcon.src = playIcon.src.replace('stop.png', 'play.png');
                 }
                 loadFrame(state.currentFrame);
             }

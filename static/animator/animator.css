@@ -132,7 +132,9 @@
 }
 
 .animator-thumb.is-active {
-    border: 2px solid #000;
+    border: 2px solid #0074d9;
+    box-shadow: 0 0 4px #0074d9, inset 0 0 4px rgba(0, 116, 217, 0.3);
+    background-color: rgba(0, 116, 217, 0.1);
 }
 
 .animator-thumb img {

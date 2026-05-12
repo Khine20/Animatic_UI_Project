@@ -47,6 +47,7 @@ def ensure_user_data_file():
             "started_at": None,
             "visits": [],
             "answers": {},
+            "current_step": 0
         })
 
 
@@ -171,13 +172,26 @@ def export_gif():
 @app.route('/learn')
 def learn():
     log_visit('learn')
-    return render_template('learn.html')
+    user_data = load_user_data()
+    step = user_data.get('current_step', 0)
+    return render_template('learn.html', initial_step=step)
 
 
 @app.route('/learn/<int:lesson_id>')
 def learn_lesson(lesson_id):
     log_visit(f'learn/{lesson_id}')
-    return render_template('learn.html', lesson_id=lesson_id)
+    user_data = load_user_data()
+    user_data['current_step'] = lesson_id
+    save_user_data(user_data)
+    return render_template('learn.html', initial_step=lesson_id)
+
+@app.route('/save_step', methods=['POST'])
+def save_step():
+    payload = request.get_json(silent=True) or {}
+    user_data = load_user_data()
+    user_data['current_step'] = payload.get('step', 0)
+    save_user_data(user_data)
+    return jsonify({"ok": True})
 
 @app.route('/quiz')
 def quiz_start():
@@ -418,6 +432,7 @@ def reset():
         "started_at": None,
         "visits": [],
         "answers": {},
+        "current_step": 0
     })
     return jsonify({"ok": True})
 
