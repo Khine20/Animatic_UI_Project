@@ -50,12 +50,12 @@ Quiz questions live in `data.json` (source of truth, not hard-coded in HTML). Pe
 }
 ```
 
-## Contributors
+## Team Members (Contributors)
 
-- Khine20
-- jettlwang
-- OleNY1
-- Cecilia
+- Khine Su Thar - Khine20
+- Jett Wang - jettlwang
+- Oleh Goumain - OleNY1
+- Cecilia Zhou - Cecilia
 
 ## Canvas Data (for backend)
 
