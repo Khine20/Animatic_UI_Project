@@ -284,6 +284,28 @@
         .drag-item.reveal-wrong   { border-color:#b22222; background:#4d1414; animation:pipShake 0.35s ease; }
         .drag-item.locked { cursor: default; }
 
+        /* Frame reorder (filmstrip) */
+        .frame-order-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+        .frame-order-list .drag-item {
+            min-height: 96px;
+        }
+        .frame-order-thumb {
+            max-height: 88px;
+            width: auto;
+            max-width: 100%;
+            border-radius: 6px;
+            border: 1px solid #444;
+            background: #111;
+            object-fit: contain;
+        }
+
         /* True/False */
         .tf-grid {
             display: grid;
@@ -382,11 +404,13 @@
                         <div class="progress-bar" style="width: {{ (question_id / total * 100)|round(0) }}%"></div>
                     </div>
 
+                    {% if question.type != 'frame_order' %}
                     <div class="workspace-stage mt-4" id="workspace-stage">
                         {% set animator_id = 'quiz' %}
                         {% set file_name = 'your-animation.ani' %}
                         {% include 'components/animator_canvas.html' %}
                     </div>
+                    {% endif %}
 
                     <h2 class="question-text">{{ question.question }}</h2>
 
@@ -406,6 +430,20 @@
                                     <span class="drag-handle">⋮⋮</span>
                                     <span class="drag-position">{{ loop.index }}.</span>
                                     <span class="drag-label">{{ item }}</span>
+                                </li>
+                            {% endfor %}
+                        </ul>
+
+                    {% elif question.type == 'frame_order' %}
+                        <p class="text-white-50" style="font-size:14px; margin-bottom:0.75rem;">
+                            Drag frames so position <strong>1</strong> is the first moment in time and <strong>5</strong> is the last — top to bottom = playback order.
+                        </p>
+                        <ul class="frame-order-list drag-list" id="frame-order-list">
+                            {% for src in question["frame_images"] %}
+                                <li class="drag-item" data-original-index="{{ loop.index0 }}">
+                                    <span class="drag-handle">⋮⋮</span>
+                                    <span class="drag-position">{{ loop.index }}.</span>
+                                    <img class="frame-order-thumb" src="{{ url_for('static', filename=src) }}" alt="Animation frame {{ loop.index }}" width="200" height="120" loading="lazy">
                                 </li>
                             {% endfor %}
                         </ul>
@@ -454,6 +492,7 @@
             var inputValue    = null;
             var tfValue       = null;
             var dragSortable  = null;
+            var frameOrderSortable = null;
             var hintUsed      = false;
             var hasSubmitted  = false;
             var lastFeedback  = null;
@@ -525,6 +564,40 @@
                     });
                 }
 
+            } else if (questionType === 'frame_order') {
+                var $frameList = $('#frame-order-list');
+
+                if (previousAnswer && Array.isArray(previousAnswer.order)) {
+                    var $fItems = $frameList.children('.drag-item').detach();
+                    previousAnswer.order.forEach(function (origIdx) {
+                        $fItems.filter('[data-original-index="' + origIdx + '"]').appendTo($frameList);
+                    });
+                } else {
+                    var $fItems = $frameList.children('.drag-item').get();
+                    for (var fi = $fItems.length - 1; fi > 0; fi--) {
+                        var fj = Math.floor(Math.random() * (fi + 1));
+                        $frameList[0].insertBefore($fItems[fj], $fItems[fi].nextSibling);
+                        var tmpf = $fItems[fi]; $fItems[fi] = $fItems[fj]; $fItems[fj] = tmpf;
+                    }
+                }
+                refreshFrameOrderNumbers();
+
+                frameOrderSortable = Sortable.create($frameList[0], {
+                    animation: 180,
+                    ghostClass: 'sortable-ghost',
+                    chosenClass: 'sortable-chosen',
+                    handle: '.drag-item',
+                    onEnd: function () { refreshFrameOrderNumbers(); }
+                });
+
+                $('#next-btn').prop('disabled', false);
+
+                function refreshFrameOrderNumbers() {
+                    $frameList.children('.drag-item').each(function (i) {
+                        $(this).find('.drag-position').text((i + 1) + '.');
+                    });
+                }
+
             } else if (questionType === 'true_false') {
                 if (previousAnswer && typeof previousAnswer.value === 'boolean') {
                     tfValue = previousAnswer.value;
@@ -567,6 +640,10 @@
                     payload.answer = inputValue;
                 } else if (questionType === 'drag_order') {
                     payload.order = $('#drag-list').children('.drag-item')
+                        .map(function () { return parseInt($(this).data('original-index'), 10); })
+                        .get();
+                } else if (questionType === 'frame_order') {
+                    payload.order = $('#frame-order-list').children('.drag-item')
                         .map(function () { return parseInt($(this).data('original-index'), 10); })
                         .get();
                 } else if (questionType === 'true_false') {
@@ -635,6 +712,29 @@
                         }, 500);
                     }
 
+                } else if (questionType === 'frame_order') {
+                    if (frameOrderSortable) frameOrderSortable.option('disabled', true);
+                    var $fItems = $('#frame-order-list .drag-item').addClass('locked');
+
+                    if (feedback.is_correct) {
+                        $fItems.addClass('reveal-correct');
+                    } else {
+                        $fItems.addClass('reveal-wrong');
+                        setTimeout(function () {
+                            var $fl = $('#frame-order-list');
+                            var $det = $fl.children('.drag-item').detach()
+                                .removeClass('reveal-wrong');
+                            feedback.correct_order.forEach(function (origIdx) {
+                                $det.filter('[data-original-index="' + origIdx + '"]')
+                                    .addClass('reveal-correct')
+                                    .appendTo($fl);
+                            });
+                            $fl.children('.drag-item').each(function (i) {
+                                $(this).find('.drag-position').text((i + 1) + '.');
+                            });
+                        }, 500);
+                    }
+
                 } else if (questionType === 'true_false') {
                     var $tf = $('.tf-btn').prop('disabled', true).removeClass('selected');
                     $tf.each(function () {
@@ -659,16 +759,17 @@
                 $('#pip-hint-btn').prop('disabled', true);
             }
 
-            // ---- Canvas Initialization ----
-            // Mount without an `onChange` callback to prevent edits from being saved to the server
-            var api = window.AnimaticCanvasModule.mount('#animator-root-quiz', {
-                draggable: false
-            });
-            $.get('/load_frames').done(function(data) {
-                if (data.frames && data.frames.length > 0) {
-                    api.loadFrames(data.frames);
-                }
-            });
+            // ---- Canvas (lesson playback) — hidden on frame-order question ----
+            if (questionType !== 'frame_order') {
+                var api = window.AnimaticCanvasModule.mount('#animator-root-quiz', {
+                    draggable: false
+                });
+                $.get('/load_frames').done(function(data) {
+                    if (data.frames && data.frames.length > 0) {
+                        api.loadFrames(data.frames);
+                    }
+                });
+            }
         });
     </script>
     <script src="{{ url_for('static', filename='background.js') }}"></script>

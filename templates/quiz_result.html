@@ -402,6 +402,29 @@
                                 {% endfor %}
                             {% endif %}
 
+                        {% elif r.type == 'frame_order' %}
+                            <div class="text-white-50" style="font-size:13px; margin:6px 0 4px;">Your order:</div>
+                            {% if r.user_order and r.frame_images %}
+                                {% for orig_idx in r.user_order %}
+                                    {% set is_in_place = (loop.index0 == orig_idx) %}
+                                    <div class="option-row d-flex align-items-center gap-3 flex-wrap {% if is_in_place %}your-correct{% else %}your-wrong{% endif %}">
+                                        <span class="text-nowrap">{{ loop.index }}.</span>
+                                        <img src="{{ url_for('static', filename=r['frame_images'][orig_idx]) }}" alt="Frame" style="max-height:72px;border-radius:4px;border:1px solid rgba(255,255,255,0.2);">
+                                    </div>
+                                {% endfor %}
+                            {% else %}
+                                <div class="option-row your-wrong">(no answer)</div>
+                            {% endif %}
+                            {% if not r.is_correct %}
+                                <div class="text-white-50" style="font-size:13px; margin:10px 0 4px;">Correct playback order:</div>
+                                {% for src in r["frame_images"] %}
+                                    <div class="option-row actual-correct d-flex align-items-center gap-3 flex-wrap">
+                                        <span class="text-nowrap">{{ loop.index }}.</span>
+                                        <img src="{{ url_for('static', filename=src) }}" alt="Frame" style="max-height:72px;border-radius:4px;border:1px solid rgba(255,255,255,0.2);">
+                                    </div>
+                                {% endfor %}
+                            {% endif %}
+
                         {% elif r.type == 'true_false' %}
                             <div class="option-row {% if r.is_correct %}your-correct{% else %}your-wrong{% endif %}">
                                 Your answer: {{ 'TRUE' if r.user_value else ('FALSE' if r.user_value is not none else '(no answer)') }}

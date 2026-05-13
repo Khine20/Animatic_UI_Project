@@ -289,6 +289,29 @@ def submit_answer(question_id):
             "pip_reaction": question.get('pip_correct') if is_correct else question.get('pip_wrong')
         }
 
+    elif qtype == 'frame_order':
+        order = payload.get('order')
+        frames = question.get('frame_images', [])
+        n = len(frames)
+        if (not isinstance(order, list)
+            or len(order) != n
+            or sorted(order) != list(range(n))):
+            return jsonify({"ok": False, "error": "order must be a permutation of frame indices"}), 400
+        # Frames in data.json are stored in correct playback order.
+        is_correct = order == list(range(n))
+        user_answer = {
+            "order": order,
+            "is_correct": is_correct,
+            "hint_used": hint_used,
+            "answered_at": datetime.utcnow().isoformat() + 'Z'
+        }
+        feedback = {
+            "is_correct": is_correct,
+            "correct_order": list(range(n)),
+            "frame_images": frames,
+            "pip_reaction": question.get('pip_correct') if is_correct else question.get('pip_wrong')
+        }
+
     elif qtype == 'true_false':
         value = payload.get('value')
         if not isinstance(value, bool):
@@ -390,6 +413,9 @@ def quiz_result():
             )
         elif qtype == 'drag_order':
             result["items"] = q.get('items', [])
+            result["user_order"] = user_answer.get('order') if user_answer else None
+        elif qtype == 'frame_order':
+            result["frame_images"] = q.get('frame_images', [])
             result["user_order"] = user_answer.get('order') if user_answer else None
         elif qtype == 'true_false':
             result["user_value"] = user_answer.get('value') if user_answer else None

@@ -40,44 +40,19 @@
     },
     {
       "id": 4,
-      "question": "For a short bouncing-ball animation, roughly how many frames do you need at minimum to see clear motion?",
-      "options": [
-        "1 frame",
-        "At least 2 frames",
-        "At least 5 frames",
-        "Exactly 100 frames"
+      "question": "These five frames from a falling ball got shuffled. Drag them into the order that shows the ball dropping smoothly from top to bottom.",
+      "type": "frame_order",
+      "frame_images": [
+        "quiz/bounce_order/frame_01.png",
+        "quiz/bounce_order/frame_02.png",
+        "quiz/bounce_order/frame_03.png",
+        "quiz/bounce_order/frame_04.png",
+        "quiz/bounce_order/frame_05.png"
       ],
-      "correct_index": 1,
-      "pip_intro": "Quick fundamentals check!",
-      "pip_hint": "Motion needs at least a 'before' and an 'after' — but more usually looks even smoother.",
-      "pip_correct": "Great instincts! Two frames is the bare minimum for motion, though more frames make it look smoother.",
-      "pip_wrong": "Almost! You only need at least 2 frames to show motion — anything less is just a still picture."
-    },
-    {
-      "id": 5,
-      "question": "Drag these production steps into the order a real animation studio follows to make a movie — from the very first idea to the finished film.",
-      "type": "drag_order",
-      "items": [
-        "📝  Write the script and develop the story",
-        "📋  Sketch out each scene as a storyboard",
-        "🎙️  Record the voice actors saying their lines",
-        "✏️  Draw and animate the keyframes and in-between frames",
-        "🌈  Add color, lighting, music, and final effects"
-      ],
-      "pip_intro": "This one's tricky! Real studios follow a specific order to make a film. Can you guess the workflow?",
-      "pip_hint": "Two big clues: animators need to know what the characters say BEFORE they can lip-sync, and you can't color something that hasn't been drawn yet.",
-      "pip_correct": "Wow, you nailed the real animation pipeline! Studios like Pixar and Disney follow this exact order. Voice acting comes before animation so animators can match the mouth movements to the recorded dialogue.",
-      "pip_wrong": "Tricky one! In real studios: story first, then storyboard, THEN voice acting (so animators can lip-sync to it), then the actual animation, and finally color and effects. Voice before animation surprises a lot of people!"
-    },
-    {
-      "id": 6,
-      "question": "True or false: It takes 24 drawings to make just 1 second of traditional film animation.",
-      "type": "true_false",
-      "correct_answer": true,
-      "pip_intro": "Last one — fun trivia time! True or false?",
-      "pip_hint": "Remember when we talked about FPS? Movies usually run at 24 frames per second. So how many drawings do you need for one second?",
-      "pip_correct": "True! Traditional film animation runs at 24 frames per second, so a single minute of animation can be over 1,400 hand-drawn pictures. That's why old Disney movies took years to make!",
-      "pip_wrong": "Actually true! Film runs at 24 frames per second, so for every single second on screen, animators had to hand-draw 24 separate pictures. No wonder it took years."
+      "pip_intro": "Editors sometimes get frames out of order — animators have to put the story back together!",
+      "pip_hint": "Look at where the ball sits in each picture. The motion should flow from high on the canvas to low.",
+      "pip_correct": "Perfect sequencing! You read the motion across frames like a real animator.",
+      "pip_wrong": "Not quite — compare the ball's height in each frame. The smoothest drop goes from the highest position to the lowest."
     }
   ]
 }
