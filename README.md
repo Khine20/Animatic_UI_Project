@@ -53,7 +53,7 @@ Quiz questions live in `data.json` (source of truth, not hard-coded in HTML). Pe
 ## Team Members (Contributors)
 
 - Khine Su Thar - Khine20
-- Jett Wang - jettlwang
+- Jett W - jettlwang
 - Oleh Goumain - OleNY1
 - Cecilia Zhou - Cecilia
 

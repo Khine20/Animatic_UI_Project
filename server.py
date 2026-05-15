@@ -11,6 +11,10 @@ app = Flask(__name__)
 # In-memory canvas frame store — cleared on server restart (no persistent save)
 canvas_frames = []
 
+# In-memory learn page step state. Keeps the current tutorial step on the
+# running server only and resets when the server restarts.
+learn_current_step = 0
+
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DATA_PATH = os.path.join(BASE_DIR, 'data.json')
 USER_DATA_PATH = os.path.join(BASE_DIR, 'user_data.json')
@@ -46,8 +50,7 @@ def ensure_user_data_file():
         save_user_data({
             "started_at": None,
             "visits": [],
-            "answers": {},
-            "current_step": 0
+            "answers": {}
         })
 
 
@@ -172,25 +175,24 @@ def export_gif():
 @app.route('/learn')
 def learn():
     log_visit('learn')
-    user_data = load_user_data()
-    step = user_data.get('current_step', 0)
-    return render_template('learn.html', initial_step=step)
+    # Serve the learn page using the in-memory step state so progress only
+    # lives on the running server and is cleared on restart.
+    global learn_current_step
+    return render_template('learn.html', initial_step=learn_current_step)
 
 
 @app.route('/learn/<int:lesson_id>')
 def learn_lesson(lesson_id):
     log_visit(f'learn/{lesson_id}')
-    user_data = load_user_data()
-    user_data['current_step'] = lesson_id
-    save_user_data(user_data)
+    global learn_current_step
+    learn_current_step = lesson_id
     return render_template('learn.html', initial_step=lesson_id)
 
 @app.route('/save_step', methods=['POST'])
 def save_step():
     payload = request.get_json(silent=True) or {}
-    user_data = load_user_data()
-    user_data['current_step'] = payload.get('step', 0)
-    save_user_data(user_data)
+    global learn_current_step
+    learn_current_step = int(payload.get('step', 0))
     return jsonify({"ok": True})
 
 @app.route('/quiz')

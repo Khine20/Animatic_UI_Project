@@ -9,6 +9,7 @@
     <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='grid.css') }}">
     <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='homepage.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='animator/animator.css') }}">
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='assets/pipInstruct.png') }}">
     <style>
         /* Override homepage.css which sets body { display:flex; height:100%; overflow:hidden }
            — that was clipping pages taller than the viewport. */
@@ -397,7 +398,6 @@
                 <section class="quiz-card">
                     <div class="quiz-meta">
                         <span>Question {{ question_id }} of {{ total }}</span>
-                        <a href="/" class="text-white-50">Home</a>
                     </div>
                     <div class="progress" role="progressbar"
                          aria-valuenow="{{ question_id }}" aria-valuemin="0" aria-valuemax="{{ total }}">

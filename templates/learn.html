@@ -8,6 +8,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@400;500;600;700&family=Fugaz+One&display=swap" rel="stylesheet">
     <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='grid.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='animator/animator.css') }}">
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='assets/pipInstruct.png') }}">
     <style>
         html, body {
             background: #00325a;
@@ -196,27 +197,27 @@
         .mission-text {
             font-size: 16px;
             line-height: 1.5;
-            min-height: 120px;
         }
 
         /* Quiz button slot inside the mission panel */
         .mission-quiz-slot {
             display: none;
-            margin-top: 0.5rem;
-            padding-top: 1rem;
-            border-top: 1px dashed #c8e6c9;
+            margin-top: 0;
+            padding-top: 0;
+            border-top: none;
             flex-direction: column;
-            gap: 0.5rem;
+            gap: 0.25rem;
             align-items: stretch;
         }
         .mission-quiz-slot.visible { display: flex; }
         .mission-quiz-slot .mission-quiz-label {
-            font-size: 13px;
+            font-size: 16px;
             color: #008afb;
-            font-weight: bold;
+            font-weight: normal;
             text-align: center;
-            letter-spacing: 1px;
-            text-transform: uppercase;
+            letter-spacing: normal;
+            text-transform: none;
+            margin-bottom: 0;
         }
         .mission-quiz-slot .quiz-link-btn {
             width: 100%;
@@ -237,6 +238,8 @@
             align-items: center;
             border: none;
             padding: 0;
+            align-self: start;
+            padding-top: 4rem;
         }
 
         .animator-module {
@@ -312,7 +315,6 @@
                 <div class="mission-text" id="mission-text"></div>
 
                 <div class="mission-quiz-slot" id="mission-quiz-slot">
-                    <span class="mission-quiz-label">Ready?</span>
                     <button class="quiz-link-btn" id="quiz-btn">Take the Quiz &rarr;</button>
                 </div>
             </aside>
@@ -448,6 +450,11 @@
                     missionText.innerHTML = mission[step] || '';
                     missionName.textContent = defaultMissionName;
                     currentToolKey = null; // Clear tool tracking when leaving step 2
+                }
+
+                // If we're at the final dialogue, show the Ready? label inside the mission text
+                if (step === dialogues.length - 1) {
+                    missionText.innerHTML = 'Ready?';
                 }
             };
 
