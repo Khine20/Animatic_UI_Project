@@ -426,6 +426,7 @@
             let currentToolKey = null; // Track the currently hovered tool identifier
             const defaultStep2Mission = mission[2]; // Store the default step 2 mission text
             const defaultMissionName = 'Mission'; // Store the default mission title
+            let lastFloorEnabled = null;
 
             const updatePip = function () {
                 // Render the main dialogue and, if present, render the step-specific hint
@@ -442,10 +443,10 @@
                 
                 // Enable floor line from step 3 onwards
                 if (api && typeof api.setFloor === 'function') {
-                    if (step >= 3) {
-                        api.setFloor(true);
-                    } else {
-                        api.setFloor(false);
+                    const shouldShowFloor = step >= 3;
+                    if (lastFloorEnabled !== shouldShowFloor) {
+                        api.setFloor(shouldShowFloor);
+                        lastFloorEnabled = shouldShowFloor;
                     }
                 }
                 
@@ -516,7 +517,7 @@
                             toolKey = "add-frame";
                         }
                         
-                        if (toolKey && toolInfo[toolKey]) {
+                        if (toolKey && toolInfo[toolKey] && currentToolKey !== toolKey) {
                             currentToolKey = toolKey;
                             updatePip();
                         }
@@ -527,6 +528,9 @@
                     if (step !== 2) return;
                     const button = e.target.closest('[data-tooltip]');
                     if (button) {
+                        const toEl = e.relatedTarget;
+                        if (toEl && button.contains(toEl)) return;
+                        if (!currentToolKey) return;
                         currentToolKey = null;
                         updatePip();
                     }

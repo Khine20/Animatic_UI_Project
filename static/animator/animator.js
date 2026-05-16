@@ -507,6 +507,7 @@
                 const addBtn = document.createElement("button");
                 addBtn.type = "button";
                 addBtn.className = "animator-thumb-add";
+                addBtn.dataset.action = "add-frame";
                 if (state.highlightedTools.has("add") || state.highlightedTools.has("add-frame")) {
                     addBtn.classList.add("is-highlighted");
                 }
@@ -514,9 +515,11 @@
                 addBtn.setAttribute('aria-label', 'Add Frame');
                 addBtn.dataset.tooltip = "Add Frame: create the next frame in your animation.";
                 addBtn.textContent = "+";
-                addBtn.onclick = function() {
-                    if (!state.playing) addFrame();
-                };
+                addBtn.addEventListener("click", function (event) {
+                    event.stopPropagation();
+                    if (state.playing) return;
+                    addFrame();
+                });
                 timeline.appendChild(addBtn);
             }
         }
@@ -578,7 +581,10 @@
         }
 
         function handleActionClick(event) {
-            const button = event.target.closest("[data-action]");
+            const target = event.target;
+            const button = target && typeof target.closest === "function"
+                ? target.closest("[data-action]")
+                : null;
             if (!button || !root.contains(button)) {
                 return;
             }
@@ -601,6 +607,9 @@
             }
 
             if (action === "add-frame") {
+                if (state.playing) {
+                    return;
+                }
                 addFrame();
                 return;
             }
@@ -780,6 +789,17 @@
                     scrubFrame(event.target.value);
                 });
             }
+            // Fallback: ensure Add Frame works even if delegated action matching misses a click target.
+            timeline.addEventListener("click", function (event) {
+                const target = event.target;
+                const addBtn = target && typeof target.closest === "function"
+                    ? target.closest(".animator-thumb-add")
+                    : null;
+                if (!addBtn || !timeline.contains(addBtn) || state.playing) {
+                    return;
+                }
+                addFrame();
+            });
             root.addEventListener("click", handleActionClick);
 
             root.addEventListener("mouseover", function (event) {
