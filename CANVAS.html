@@ -103,6 +103,19 @@
             transition: opacity 100ms linear, transform 100ms linear;
         }
 
+        /* Smaller fun-fact text inside tooltips */
+        .ms-tooltip .ms-fun-fact {
+            display: block;
+            font-size: 10px;
+            color: #333;
+            margin-top: 10px;
+            font-family: 'Gill Sans', 'Gill Sans MT', Calibri, sans-serif;
+            padding-top: 10px;
+            padding-bottom: 6px;
+            border-top: 1px solid rgba(0,0,0,0.08);
+            line-height: 1.4;
+        }
+
         .ms-tooltip.visible {
             opacity: 1;
             transform: translateY(0);
@@ -248,7 +261,18 @@
             if (!text) return;
             clearTimeout(tooltipTimer);
             tooltipTimer = setTimeout(() => {
-                msTooltip.textContent = text;
+                // If the tooltip contains a double break (HTML <br><br> or
+                // double newline) treat the trailing section as a "fun fact"
+                // and render it smaller.
+                const split = text.split(/(?:<br>\s*<br>|\n\s*\n)/i);
+                if (split.length > 1) {
+                    const main = split[0];
+                    const fun = split.slice(1).join('\n\n');
+                    msTooltip.innerHTML = main + '<span class="ms-fun-fact"><strong>🍄 Fun Fact:</strong> ' + fun + '</span>';
+                } else {
+                    // No fun-fact detected; render as plain text (escape HTML)
+                    msTooltip.textContent = text;
+                }
                 msTooltip.classList.add('visible');
                 msTooltip.setAttribute('aria-hidden', 'false');
                 placeTooltip(x, y);
