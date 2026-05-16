@@ -290,8 +290,11 @@
             <aside class="pip-panel">
                 <div class="pip-dialogue-container">
                     <img src="{{ url_for('static', filename='assets/pipInstruct.png') }}" alt="Pip" class="pip-image">
-                    <div class="pip-dialogue" id="pip-text">
-                        Hi, I’m Pip! I’ll be your guide as you create your first animation.
+                    <div class="pip-dialogue">
+                        <div id="pip-text">Hi, I'm Pip! I'll be your guide as you create your first animation.</div>
+                        <div id="tutorial-sample-img" style="display:none; text-align:center; margin-top:12px;">
+                            <img src="{{ url_for('static', filename='assets/example-default.gif') }}" alt="Tutorial sample" style="width:260px; border-radius:8px; border:1px solid rgba(255,255,255,0.08); background:#fff;">
+                        </div>
                     </div>
                 </div>
                 <div class="pip-nav-row">
@@ -380,8 +383,8 @@
             ];
 
             const hints = {
-                2: "Hint: Where would the ball start if you were dropped it?",
-                9: "Hint: You’ll need to add more frames each time you move the ball."
+                3: "Hint: Where would the ball start if you were dropped it?",
+                6: "Hint: You’ll need to add more frames each time you move the ball."
             };
 
             const mission = [
@@ -425,8 +428,17 @@
             const defaultMissionName = 'Mission'; // Store the default mission title
 
             const updatePip = function () {
-                pipText.textContent = dialogues[step];
-                pipHint.textContent = hints[step] || '';
+                // Render the main dialogue and, if present, render the step-specific hint
+                // as a new line inside the pip-dialogue so it stays with the text.
+                pipText.innerHTML = dialogues[step] + (hints[step] ? ('<br><span class="pip-hint-inline">' + hints[step] + '</span>') : '');
+                // Keep the separate pip-hint element empty to avoid duplicate hints
+                if (pipHint) pipHint.textContent = '';
+                
+                // Show tutorial sample image only on step 1
+                const tutorialSampleImg = document.getElementById('tutorial-sample-img');
+                if (tutorialSampleImg) {
+                    tutorialSampleImg.style.display = step === 1 ? 'block' : 'none';
+                }
                 
                 // Enable floor line from step 3 onwards
                 if (api && typeof api.setFloor === 'function') {
