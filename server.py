@@ -213,6 +213,14 @@ def quiz(question_id):
     if question_id == 1 and question.get('type') == 'input':
         question['correct_answer'] = len(canvas_frames)
 
+    # Q4 is replayable and can be retried from within the page, so ensure any
+    # previously persisted answer doesn't bleed into a fresh load of /quiz/4.
+    if question_id == 4:
+        answers = user_data.setdefault('answers', {})
+        if str(question_id) in answers:
+            answers.pop(str(question_id), None)
+            save_user_data(user_data)
+
     log_visit(f'quiz/{question_id}')
 
     previous_answer = user_data.get('answers', {}).get(str(question_id))
@@ -293,13 +301,22 @@ def submit_answer(question_id):
 
     elif qtype == 'frame_order':
         order = payload.get('order')
-        frames = question.get('frame_images', [])
+        
+        # Question 4: use canvas frames from server; others use frame_images from data.json
+        if question_id == 4:
+            frames = canvas_frames
+            frame_images = []  # Canvas frames are data URLs, not file paths
+        else:
+            frames = question.get('frame_images', [])
+            frame_images = frames
+        
         n = len(frames)
         if (not isinstance(order, list)
             or len(order) != n
             or sorted(order) != list(range(n))):
             return jsonify({"ok": False, "error": "order must be a permutation of frame indices"}), 400
         # Frames in data.json are stored in correct playback order.
+        # For Q4, canvas frames are in original order.
         is_correct = order == list(range(n))
         user_answer = {
             "order": order,
@@ -310,7 +327,7 @@ def submit_answer(question_id):
         feedback = {
             "is_correct": is_correct,
             "correct_order": list(range(n)),
-            "frame_images": frames,
+            "frame_images": frame_images,
             "pip_reaction": question.get('pip_correct') if is_correct else question.get('pip_wrong')
         }
 
@@ -399,6 +416,7 @@ def quiz_result():
             score += 1
 
         result = {
+            "qid": q['id'],
             "question": q['question'],
             "type": qtype,
             "is_correct": is_correct,

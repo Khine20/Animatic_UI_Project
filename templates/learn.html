@@ -125,6 +125,31 @@
             max-width: 300px;
         }
 
+        /* Smaller text used for fun facts or secondary tooltip text */
+        .pip-fun-fact {
+            font-size: 13px;
+            line-height: 1.6;
+            color: #333;
+            display: block;
+            margin-top: 1rem;
+            padding-top: 0.75rem;
+            padding-bottom: 0.5rem;
+            border-top: 1px solid rgba(0,0,0,0.08);
+            font-family: 'Gill Sans', 'Gill Sans MT', Calibri, sans-serif;
+        }
+
+        /* Inline hint inside the pip-dialogue should be smaller and more spacious */
+        .pip-hint-inline {
+            display: block;
+            font-size: 13px;
+            line-height: 1.6;
+            margin-top: 1rem;
+            padding-top: 0.75rem;
+            padding-bottom: 0.5rem;
+            border-top: 1px solid rgba(0,0,0,0.08);
+            font-family: 'Gill Sans', 'Gill Sans MT', Calibri, sans-serif;
+        }
+
         .hint-row {
             width: 100%;
             max-width: 1200px;
@@ -383,8 +408,8 @@
             ];
 
             const hints = {
-                3: "Hint: Where would the ball start if you were dropped it?",
-                6: "Hint: You’ll need to add more frames each time you move the ball."
+                3: "💡Hint: Where would the ball start if you were dropped it?",
+                6: "💡Hint: You’ll need to add more frames each time you move the ball."
             };
 
             const mission = [
@@ -431,7 +456,14 @@
             const updatePip = function () {
                 // Render the main dialogue and, if present, render the step-specific hint
                 // as a new line inside the pip-dialogue so it stays with the text.
-                pipText.innerHTML = dialogues[step] + (hints[step] ? ('<br><span class="pip-hint-inline">' + hints[step] + '</span>') : '');
+                // Render dialogue and inline hint; bold the leading hint label
+                let hintHtml = '';
+                if (hints[step]) {
+                    // Bold the leading "💡Hint:" label if present
+                    hintHtml = hints[step].replace(/^\s*💡\s*Hint:?/i, '<strong>💡 Hint:</strong>');
+                    hintHtml = '<br><span class="pip-hint-inline">' + hintHtml + '</span>';
+                }
+                pipText.innerHTML = dialogues[step] + (hintHtml || '');
                 // Keep the separate pip-hint element empty to avoid duplicate hints
                 if (pipHint) pipHint.textContent = '';
                 
@@ -454,7 +486,21 @@
                 if (step === 2) {
                     if (currentToolKey && toolInfo[currentToolKey]) {
                         missionName.textContent = toolInfo[currentToolKey].title;
-                        missionText.innerHTML = toolInfo[currentToolKey].text;
+                        // Show the tooltip in the Mission panel during the tutorial
+                        // step. If the tooltip contains an extra "fun fact"
+                        // separated by a double <br>, render that trailing
+                        // paragraph inside a smaller span so it appears but is
+                        // visually de-emphasized.
+                        let tooltipHtml = toolInfo[currentToolKey].text || '';
+                        const parts = tooltipHtml.split(/<br>\s*<br>/i);
+                        const mainPart = parts[0] || '';
+                        const funPart = parts.slice(1).join('<br><br>');
+                        if (funPart) {
+                            tooltipHtml = mainPart + '<br><span class="pip-fun-fact"><strong>🍄 Fun Fact:</strong> ' + funPart + '</span>';
+                        } else {
+                            tooltipHtml = mainPart;
+                        }
+                        missionText.innerHTML = tooltipHtml;
                     } else {
                         missionText.innerHTML = defaultStep2Mission;
                         missionName.textContent = defaultMissionName;
