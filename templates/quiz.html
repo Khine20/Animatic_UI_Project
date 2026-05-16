@@ -104,6 +104,7 @@
             font-family: 'Comfortaa', cursive;
             font-size: 16px;
             line-height: 1.5;
+            white-space: pre-line;
             min-height: 80px;
             position: relative;
             background: white;
@@ -198,6 +199,10 @@
         .progress { height: 6px; background-color:#2a2a2a; border-radius:3px; overflow:hidden; }
         .progress-bar { background-color:#00942f; transition:width 0.3s ease; }
         .question-text { font-size:20px; margin: 1.5rem 0 1.25rem; line-height:1.4; }
+        .quiz-card .question-text,
+        .quiz-card p {
+            text-align: left;
+        }
 
         /* Multiple choice */
         .option-btn {
@@ -341,6 +346,11 @@
         .quiz-actions {
             display:flex; justify-content:space-between; align-items:center; margin-top:1.5rem;
         }
+        .quiz-left-actions {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
         .btn-primary-pip {
             background-color:#00942f; color:#fff; border:none;
             padding:10px 22px; font-family:'Courier New', Courier, monospace;
@@ -372,6 +382,71 @@
             .quiz-layout { flex-direction:column; align-items:center; gap: 4rem; }
             .pip-panel { width:100%; max-width:640px; align-self: center; }
         }
+
+        /* Question 4: hide frame-order list and disable most tools */
+        .question-4 .frame-order-list { display: none; }
+        .question-4 [data-action="set-tool"],
+        .question-4 [data-action="clear"],
+        .question-4 [data-action="delete-frame"],
+        .question-4 [data-action="toggle-onion"] {
+            opacity: 0.3;
+            cursor: not-allowed;
+            pointer-events: none;
+        }
+        .question-4-feedback-frames {
+            margin-top: 1.5rem;
+            padding: 1rem;
+            background: rgba(0,0,0,0.4);
+            border-radius: 8px;
+        }
+        .question-4-feedback-label {
+            font-size: 14px;
+            letter-spacing: 2px;
+            color: #b6f7c4;
+            text-transform: uppercase;
+            margin-bottom: 1rem;
+            text-align: center;
+        }
+        .question-4-correct-frames {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            justify-content: center;
+            align-items: flex-end;
+        }
+        .question-4-correct-thumb-wrap {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+        }
+        .question-4-correct-thumb {
+            max-height: 80px;
+            width: auto;
+            border-radius: 4px;
+            border: 2px solid #00942f;
+            background: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2px;
+        }
+        .question-4-correct-thumb img {
+            max-height: 76px;
+            max-width: 120px;
+            object-fit: contain;
+        }
+        .question-4-correct-position {
+            font-size: 12px;
+            font-weight: bold;
+            color: #00942f;
+            font-family: 'Courier New', Courier, monospace;
+        }
+        .question-4-shake {
+            outline: 3px solid #b22222;
+            border-radius: 8px;
+            animation: pipShake 0.35s ease;
+        }
     </style>
 </head>
 <body>
@@ -395,7 +470,7 @@
             </aside>
 
             <div class="quiz-right-col">
-                <section class="quiz-card">
+                <section class="quiz-card {% if question_id == 4 %}question-4{% endif %}">
                     <div class="quiz-meta">
                         <span>Question {{ question_id }} of {{ total }}</span>
                     </div>
@@ -404,7 +479,7 @@
                         <div class="progress-bar" style="width: {{ (question_id / total * 100)|round(0) }}%"></div>
                     </div>
 
-                    {% if question.type != 'frame_order' %}
+                    {% if question.type != 'frame_order' or question_id == 4 %}
                     <div class="workspace-stage mt-4" id="workspace-stage">
                         {% set animator_id = 'quiz' %}
                         {% set file_name = 'your-animation.ani' %}
@@ -465,11 +540,14 @@
                     {% endif %}
 
                     <div class="quiz-actions">
-                        {% if question_id > 1 %}
-                            <a href="/quiz/{{ question_id - 1 }}" class="btn-back">← Back</a>
-                        {% else %}
-                            <span></span>
-                        {% endif %}
+                        <div class="quiz-left-actions">
+                            {% if question_id > 1 %}
+                                <a href="/quiz/{{ question_id - 1 }}" class="btn-back">← Back</a>
+                            {% else %}
+                                <span></span>
+                            {% endif %}
+                            <a id="q4-result-btn" href="/quiz/result" class="btn-back" style="display:none;">See Quiz Result</a>
+                        </div>
                         <button id="next-btn" class="btn-primary-pip" disabled>Submit Answer</button>
                     </div>
                 </section>
@@ -565,37 +643,226 @@
                 }
 
             } else if (questionType === 'frame_order') {
-                var $frameList = $('#frame-order-list');
-
-                if (previousAnswer && Array.isArray(previousAnswer.order)) {
-                    var $fItems = $frameList.children('.drag-item').detach();
-                    previousAnswer.order.forEach(function (origIdx) {
-                        $fItems.filter('[data-original-index="' + origIdx + '"]').appendTo($frameList);
-                    });
-                } else {
-                    var $fItems = $frameList.children('.drag-item').get();
-                    for (var fi = $fItems.length - 1; fi > 0; fi--) {
-                        var fj = Math.floor(Math.random() * (fi + 1));
-                        $frameList[0].insertBefore($fItems[fj], $fItems[fi].nextSibling);
-                        var tmpf = $fItems[fi]; $fItems[fi] = $fItems[fj]; $fItems[fj] = tmpf;
+                // Question 4: Load frames from server, shuffle, and let user reorder via canvas
+                if (questionId === 4) {
+                    // Hard reset Q4 state on page load so stale retry/result UI and
+                    // prior animator instance state cannot affect scoring.
+                    hasSubmitted = false;
+                    lastFeedback = null;
+                    hintUsed = false;
+                    $('#q4-result-btn').hide();
+                    $('#next-btn').off('click').prop('disabled', true).text('Submit');
+                    $('#pip-hint-btn').prop('disabled', false).text('💡 Ask Pip for a hint');
+                    $('#pip-hint-text').removeClass('visible');
+                    $('.question-4-feedback-frames').remove();
+                    $('#animator-root-quiz').removeClass('question-4-shake');
+                    var existingQ4Root = document.querySelector('#animator-root-quiz');
+                    if (existingQ4Root && existingQ4Root.__animaticMounted && existingQ4Root.__animaticApi) {
+                        existingQ4Root.__animaticApi.destroy();
                     }
-                }
-                refreshFrameOrderNumbers();
 
-                frameOrderSortable = Sortable.create($frameList[0], {
-                    animation: 180,
-                    ghostClass: 'sortable-ghost',
-                    chosenClass: 'sortable-chosen',
-                    handle: '.drag-item',
-                    onEnd: function () { refreshFrameOrderNumbers(); }
-                });
+                    var q4Data = {
+                        originalFrames: [],
+                        shuffledUrls: [],
+                        totalFrames: 0,
+                        canvasApi: null
+                    };
 
-                $('#next-btn').prop('disabled', false);
+                    // Load frames from server
+                    $.get('/load_frames').done(function(data) {
+                        if (!data.frames || data.frames.length === 0) {
+                            pipSay('No frames to reorder.', 'wrong');
+                            $('#next-btn').prop('disabled', true);
+                            return;
+                        }
 
-                function refreshFrameOrderNumbers() {
-                    $frameList.children('.drag-item').each(function (i) {
-                        $(this).find('.drag-position').text((i + 1) + '.');
+                        var n = data.frames.length;
+                        q4Data.originalFrames = data.frames.slice();
+
+                        // Shuffle only up to 4 frame positions after index 0.
+                        // We keep the source data untouched and only reorder a copied list.
+                        var shuffled = q4Data.originalFrames.slice();
+                        if (n > 1) {
+                            var shuffleEnd = Math.min(4, n - 1); // indices [1..shuffleEnd]
+                            for (var i = shuffleEnd; i > 1; i--) {
+                                var j = 1 + Math.floor(Math.random() * i);
+                                var tmpFrame = shuffled[i];
+                                shuffled[i] = shuffled[j];
+                                shuffled[j] = tmpFrame;
+                            }
+                        }
+
+                        q4Data.shuffledUrls = shuffled.slice();
+                        q4Data.totalFrames = n;
+
+                        // Mount animator with shuffled frames
+                        if (window.AnimaticCanvasModule && window.AnimaticCanvasModule.mount) {
+                            q4Data.canvasApi = window.AnimaticCanvasModule.mount('#animator-root-quiz', {
+                                draggable: true,
+                                autosave: false
+                            });
+                            q4Data.canvasApi.loadFrames(shuffled);
+                        }
+
+                        $('#next-btn').prop('disabled', false);
+                    }).fail(function() {
+                        pipSay('Could not load frames.', 'wrong');
+                        $('#next-btn').prop('disabled', true);
                     });
+
+                    // On submit, extract reordered frames and score
+                    // Remove ALL click handlers including the global one that will be attached later
+                    $('#next-btn').off('click');
+                    
+                    function bindQ4SubmitHandler() {
+                        $('#next-btn').off('click.q4').one('click.q4', function(e) {
+                        e.preventDefault();
+                        e.stopImmediatePropagation();
+                        
+                        // Disable button IMMEDIATELY to prevent double submission
+                        $('#next-btn').prop('disabled', true);
+                        
+                        if (hasSubmitted) {
+                            console.log('Already submitted');
+                            return;
+                        }
+                        if (!q4Data.canvasApi || q4Data.totalFrames === 0) {
+                            pipSay('Frames not ready.', 'wrong');
+                            $('#next-btn').prop('disabled', false);
+                            return;
+                        }
+
+                        // Get current frames from canvas
+                        var currentFrames = q4Data.canvasApi.getFrames();
+                        var currentOrder = [];
+                        var sourceToIndices = {};
+
+                        console.log('Q4 submit - expecting', q4Data.totalFrames, 'frames, got', currentFrames.length);
+
+                        // Build a duplicate-safe lookup: src -> [original indices in order].
+                        for (var srcIdx = 0; srcIdx < q4Data.originalFrames.length; srcIdx++) {
+                            var src = q4Data.originalFrames[srcIdx];
+                            if (!sourceToIndices[src]) sourceToIndices[src] = [];
+                            sourceToIndices[src].push(srcIdx);
+                        }
+
+                        // Resolve each current frame to the next unmatched original index.
+                        for (var i = 0; i < currentFrames.length; i++) {
+                            var currentFrame = currentFrames[i];
+                            var bucket = sourceToIndices[currentFrame];
+                            if (bucket && bucket.length) {
+                                currentOrder.push(bucket.shift());
+                            } else {
+                                console.error('Could not match frame at position', i);
+                                currentOrder.push(-1);
+                            }
+                        }
+
+                        console.log('Order:', currentOrder);
+
+                        var payload = {
+                            hint_used: hintUsed,
+                            order: currentOrder
+                        };
+
+                        $.ajax({
+                            type: 'POST',
+                            url: '/quiz/' + questionId + '/answer',
+                            data: JSON.stringify(payload),
+                            contentType: 'application/json',
+                            success: function(resp) {
+                                var feedback = resp.feedback || {};
+                                if (feedback.is_correct) {
+                                    hasSubmitted = true;
+                                    lastFeedback = feedback;
+                                    $('#q4-result-btn').hide();
+                                    $('#animator-root-quiz').removeClass('question-4-shake');
+                                    $('#next-btn').off('click').on('click', function() {
+                                        window.location.href = resp.next_url;
+                                    }).prop('disabled', false).text('Continue');
+                                    pipSay(feedback.pip_reaction || 'Perfect! You restored the sequence!', 'correct');
+                                    $('#pip-hint-btn').prop('disabled', true);
+                                } else {
+                                    hasSubmitted = false;
+                                    lastFeedback = null;
+                                    $('#q4-result-btn').show();
+                                    $('#next-btn').prop('disabled', false).text('Retry');
+                                    var $q4CanvasWrap = $('#animator-root-quiz');
+                                    $q4CanvasWrap.removeClass('question-4-shake');
+                                    // Reflow ensures animation can retrigger on repeated attempts.
+                                    void $q4CanvasWrap[0].offsetWidth;
+                                    $q4CanvasWrap.addClass('question-4-shake');
+                                    var retryText = (feedback.pip_reaction || 'Not quite right. Look at the correct order below.') + '\nYou can keep trying.';
+                                    pipSay(retryText, 'wrong');
+                                    // Show correct order thumbnails
+                                    if (feedback.frame_images && feedback.frame_images.length > 0) {
+                                        $('.question-4-feedback-frames').remove();
+                                        var correctedHtml = '<div class="question-4-feedback-frames">';
+                                        correctedHtml += '<div class="question-4-feedback-label">Correct Order:</div>';
+                                        correctedHtml += '<div class="question-4-correct-frames">';
+                                        feedback.correct_order.forEach(function(origIdx) {
+                                            var dataUrl = feedback.frame_images[origIdx];
+                                            correctedHtml += '<div class="question-4-correct-thumb-wrap">';
+                                            correctedHtml += '<div class="question-4-correct-thumb"><img src="' + dataUrl + '" alt="Frame"></div>';
+                                            correctedHtml += '<div class="question-4-correct-position">' + (origIdx + 1) + '</div>';
+                                            correctedHtml += '</div>';
+                                        });
+                                        correctedHtml += '</div></div>';
+                                        $('#pip-panel').after(correctedHtml);
+                                    }
+                                    bindQ4SubmitHandler();
+                                }
+                            },
+                            error: function(xhr) {
+                                console.error('Q4 error:', xhr.status, xhr.responseText);
+                                hasSubmitted = false;
+                                $('#next-btn').prop('disabled', false).text('Retry');
+                                bindQ4SubmitHandler();
+                                pipSay('Error submitting answer.', 'wrong');
+                            }
+                        });
+                        });
+                    }
+
+                    // Attach ONLY the Q4 handler
+                    bindQ4SubmitHandler();
+                    // Re-attach global handler after Q4 handler
+                    // (It will be disabled via the flag set above)
+
+                } else {
+                    // Original frame_order logic for other questions
+                    var $frameList = $('#frame-order-list');
+
+                    if (previousAnswer && Array.isArray(previousAnswer.order)) {
+                        var $fItems = $frameList.children('.drag-item').detach();
+                        previousAnswer.order.forEach(function (origIdx) {
+                            $fItems.filter('[data-original-index="' + origIdx + '"]').appendTo($frameList);
+                        });
+                    } else {
+                        var $fItems = $frameList.children('.drag-item').get();
+                        for (var fi = $fItems.length - 1; fi > 0; fi--) {
+                            var fj = Math.floor(Math.random() * (fi + 1));
+                            $frameList[0].insertBefore($fItems[fj], $fItems[fi].nextSibling);
+                            var tmpf = $fItems[fi]; $fItems[fi] = $fItems[fj]; $fItems[fj] = tmpf;
+                        }
+                    }
+                    refreshFrameOrderNumbers();
+
+                    frameOrderSortable = Sortable.create($frameList[0], {
+                        animation: 180,
+                        ghostClass: 'sortable-ghost',
+                        chosenClass: 'sortable-chosen',
+                        handle: '.drag-item',
+                        onEnd: function () { refreshFrameOrderNumbers(); }
+                    });
+
+                    $('#next-btn').prop('disabled', false);
+
+                    function refreshFrameOrderNumbers() {
+                        $frameList.children('.drag-item').each(function (i) {
+                            $(this).find('.drag-position').text((i + 1) + '.');
+                        });
+                    }
                 }
 
             } else if (questionType === 'true_false') {
@@ -628,50 +895,54 @@
             }
 
             // ---- Submit / Continue ----
-            $('#next-btn').on('click', function () {
-                if (hasSubmitted && lastFeedback) {
-                    window.location.href = lastFeedback.next_url;
-                    return;
-                }
+            // Only attach global handler for non-Q4 questions
+            if (questionId !== 4) {
+                $('#next-btn').on('click.global', function () {
+                    if (hasSubmitted && lastFeedback) {
+                        window.location.href = lastFeedback.next_url;
+                        return;
+                    }
 
-                var payload = { hint_used: hintUsed };
-                if (questionType === 'input') {
-                    if (!inputValue) return;
-                    payload.answer = inputValue;
-                } else if (questionType === 'drag_order') {
-                    payload.order = $('#drag-list').children('.drag-item')
-                        .map(function () { return parseInt($(this).data('original-index'), 10); })
-                        .get();
-                } else if (questionType === 'frame_order') {
-                    payload.order = $('#frame-order-list').children('.drag-item')
-                        .map(function () { return parseInt($(this).data('original-index'), 10); })
-                        .get();
-                } else if (questionType === 'true_false') {
-                    if (tfValue === null) return;
-                    payload.value = tfValue;
-                } else {
-                    if (selectedIndex === null) return;
-                    payload.selected_index = selectedIndex;
-                }
+                    var payload = { hint_used: hintUsed };
+                    if (questionType === 'input') {
+                        if (!inputValue) return;
+                        payload.answer = inputValue;
+                    } else if (questionType === 'drag_order') {
+                        payload.order = $('#drag-list').children('.drag-item')
+                            .map(function () { return parseInt($(this).data('original-index'), 10); })
+                            .get();
+                    } else if (questionType === 'frame_order') {
+                        // For non-Q4 frame_order questions
+                        payload.order = $('#frame-order-list').children('.drag-item')
+                            .map(function () { return parseInt($(this).data('original-index'), 10); })
+                            .get();
+                    } else if (questionType === 'true_false') {
+                        if (tfValue === null) return;
+                        payload.value = tfValue;
+                    } else {
+                        if (selectedIndex === null) return;
+                        payload.selected_index = selectedIndex;
+                    }
 
-                var $btn = $(this).prop('disabled', true).text('Checking...');
+                    var $btn = $(this).prop('disabled', true).text('Checking...');
 
-                $.ajax({
-                    url: '/quiz/' + questionId + '/answer',
-                    method: 'POST',
-                    contentType: 'application/json',
-                    data: JSON.stringify(payload)
-                }).done(function (resp) {
-                    hasSubmitted = true;
-                    lastFeedback = resp;
-                    revealFeedback(resp.feedback);
-                    var continueLabel = (questionId < totalQuestions) ? 'Next Question →' : 'See My Score →';
-                    $btn.prop('disabled', false).text(continueLabel);
-                }).fail(function () {
-                    pipSay("Hmm, I couldn't save that. Try once more?", 'wrong');
-                    $btn.prop('disabled', false).text('Submit Answer');
+                    $.ajax({
+                        url: '/quiz/' + questionId + '/answer',
+                        method: 'POST',
+                        contentType: 'application/json',
+                        data: JSON.stringify(payload)
+                    }).done(function (resp) {
+                        hasSubmitted = true;
+                        lastFeedback = resp;
+                        revealFeedback(resp.feedback);
+                        var continueLabel = (questionId < totalQuestions) ? 'Next Question →' : 'See My Score →';
+                        $btn.prop('disabled', false).text(continueLabel);
+                    }).fail(function () {
+                        pipSay("Hmm, I couldn't save that. Try once more?", 'wrong');
+                        $btn.prop('disabled', false).text('Submit Answer');
+                    });
                 });
-            });
+            }
 
             // ---- Reveal feedback ----
             function revealFeedback(feedback) {
@@ -759,10 +1030,11 @@
                 $('#pip-hint-btn').prop('disabled', true);
             }
 
-            // ---- Canvas (lesson playback) — hidden on frame-order question ----
-            if (questionType !== 'frame_order') {
+            // ---- Canvas (lesson playback) — show on non-frame-order questions, and on question 4 (mounted in Q4 block) ----
+            if ((questionType !== 'frame_order' || questionId === 4) && questionId !== 4) {
                 var api = window.AnimaticCanvasModule.mount('#animator-root-quiz', {
-                    draggable: false
+                    draggable: false,
+                    autosave: false
                 });
                 $.get('/load_frames').done(function(data) {
                     if (data.frames && data.frames.length > 0) {
@@ -770,6 +1042,7 @@
                     }
                 });
             }
+
         });
     </script>
     <script src="{{ url_for('static', filename='background.js') }}"></script>
