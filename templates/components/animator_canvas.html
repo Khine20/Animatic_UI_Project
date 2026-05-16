@@ -15,6 +15,9 @@
                     <button type="button" class="animator-btn animator-btn-clear" data-action="clear" data-tooltip="Clear Frame">
                         <img class="animator-icon" src="{{ url_for('static', filename='assets/delete.png') }}" alt="Clear frame">
                     </button>
+                    <button type="button" class="animator-btn animator-btn-del" data-action="delete-frame" data-tooltip="Delete this frame (disabled if only 1 frame)">
+                        <img class="animator-icon" src="{{ url_for('static', filename='assets/trash.png') }}" alt="Delete frame">
+                    </button>
                     <button type="button" class="animator-btn animator-btn-play" data-action="toggle-play" data-tooltip="Play/Stop">
                         <img class="animator-icon" data-role="play-icon" src="{{ url_for('static', filename='assets/play.png') }}" alt="Play">
                     </button>
