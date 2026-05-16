@@ -41,50 +41,80 @@
             align-items: flex-start;
         }
         .pip-panel {
-            background: #fff;
-            border: 2px solid #00942f;
-            border-radius: 8px;
-            padding: 1.75rem;
-            width: 300px;
-            min-width: 260px;
-            color: #000;
-            display: flex;
-            flex-direction: column;
-            gap: 1rem;
-            box-shadow: 0 6px 20px rgba(0,0,0,0.25);
-        }
-        .pip-wrap {
-            width: 300px;
-            min-width: 260px;
-            display: flex;
-            flex-direction: column;
-            align-items: stretch;
-            gap: 6px;
-        }
-        .pip-image-frame {
-            width: 100%;
-            overflow: hidden;
-            border-radius: 8px;
-            box-shadow: 0 6px 18px rgba(0,0,0,0.25);
-            background: #ffffff;
-        }
-        .pip-image {
-            display: block;
-            width: 100%;
-            height: auto;
-            object-fit: contain;
+            border: none;
             background: transparent;
+            width: 345px;
+            min-width: 260px;
+            color: black;
+
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+
+            gap: 0;
         }
-        .pip-name {
-            font-size: 20px;
-            font-weight: bold;
-            color: #00942f;
-            margin: 0;
+
+        .pip-dialogue-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
         }
+
+        
+
+        .pip-image {
+            width: 320px;
+            height: auto;
+            display: block;
+
+            margin-bottom: 20px;
+            z-index: 2;
+        }
+
         .pip-dialogue {
-            font-family: 'Comfortaa', cursive, sans-serif;
+            font-family: 'Comfortaa', cursive;
             font-size: 16px;
             line-height: 1.5;
+
+            position: relative;
+            background: white;
+            border: 2px solid #2e77ff;
+            border-radius: 8px;
+
+            padding: 1.25rem;
+            width: 100%;
+            max-width: 325px;
+
+            color: black;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.25);
+
+            margin-top: 0;
+        }
+
+        .pip-dialogue::before {
+            content: '';
+            position: absolute;
+            top: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0;
+            height: 0;
+            border-left: 10px solid transparent;
+            border-right: 10px solid transparent;
+            border-bottom: 10px solid #00942f;
+        }
+
+        .pip-dialogue::after {
+            content: '';
+            position: absolute;
+            top: -8px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0;
+            height: 0;
+            border-left: 8px solid transparent;
+            border-right: 8px solid transparent;
+            border-bottom: 8px solid white;
         }
         .results-main {
             flex: 1;
@@ -351,22 +381,29 @@
         <div class="results-layout">
             <!-- PIP final commentary -->
             <div class="pip-wrap">
-                <div class="pip-image-frame">
-                    <img src="{{ url_for('static', filename='pip.png') }}" alt="PIP" class="pip-image">
-                </div>
                 <aside class="pip-panel">
-                <h2 class="pip-name">PIP says:</h2>
-                <div class="pip-dialogue">
-                    {% if score == total %}
-                        Wow — a perfect score! You're a natural animator. I knew you had it in you.
-                    {% elif score >= (total // 2) + 1 %}
-                        Nice work! You're getting the hang of animation basics. Keep practicing and you'll master it.
-                    {% elif score > 0 %}
-                        Don't worry — animation takes practice. Try the lesson again and you'll see those scores climb.
-                    {% else %}
-                        Hey, everyone starts somewhere! Let's go back to the lesson and try again together.
-                    {% endif %}
-                </div>
+
+                    <div class="pip-dialogue-container">
+
+                        <img
+                            src="{{ url_for('static', filename='pipResult.png') }}"
+                            alt="PIP"
+                            class="pip-image"
+                        >
+                        <div class="pip-dialogue">
+                            {% if score == total %}
+                                Wow — a perfect score! You're a natural animator. I knew you had it in you.
+                            {% elif score >= (total // 2) + 1 %}
+                                Nice work! You're getting the hang of animation basics. Keep practicing and you'll master it.
+                            {% elif score > 0 %}
+                                Don't worry — animation takes practice. Try the lesson again and you'll see those scores climb.
+                            {% else %}
+                                Hey, everyone starts somewhere! Let's go back to the lesson and try again together.
+                            {% endif %}
+                        </div>
+
+                    </div>
+
                 </aside>
             </div>
 
